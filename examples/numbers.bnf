@@ -2,4 +2,5 @@
 <separator> ::= "," "."
 <number> ::= <digit> | <digit> <number>
 <float> ::= <number> <separator> <number>
-<other> ::= "b" <number> "a"
+<hex> ::= <digit> | "a" | "b" | "c" | "d" | "e" | "f"
+<hexnumber> ::= <hex> | <hexnumber>
