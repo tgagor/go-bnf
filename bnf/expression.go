@@ -2,7 +2,6 @@ package bnf
 
 import (
 	"slices"
-	"strings"
 )
 
 type Expression struct {
@@ -17,15 +16,15 @@ func (b *BNF) Match(expName string, val string) bool {
 	return slices.Contains(exp.Patterns, val)
 }
 
-func (b *BNF) clean(symbol string) string {
-	if strings.HasPrefix(symbol, "\"") && strings.HasSuffix(symbol, "\"") {
-		return strings.Trim(symbol, "\"")
-	} else if strings.HasPrefix(symbol, "<") && strings.HasSuffix(symbol, ">") {
-		val, ok := b.Symbols[symbol]
-		if ok {
-			b.clean()
-		}
-	}
+// func (b *BNF) clean(symbol string) string {
+// 	if strings.HasPrefix(symbol, "\"") && strings.HasSuffix(symbol, "\"") {
+// 		return strings.Trim(symbol, "\"")
+// 	} else if strings.HasPrefix(symbol, "<") && strings.HasSuffix(symbol, ">") {
+// 		val, ok := b.Symbols[symbol]
+// 		if ok {
+// 			b.clean()
+// 		}
+// 	}
 
-	return ""
-}
+// 	return ""
+// }
