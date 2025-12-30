@@ -132,7 +132,7 @@ func TestLexer_StringQuotes(t *testing.T) {
 
 func TestLexer_EmptyString(t *testing.T) {
 	t.Parallel()
-	
+
 	l := NewLexer(strings.NewReader(`"" '' "a" 'b'`))
 
 	tok := l.Next()
@@ -150,4 +150,28 @@ func TestLexer_EmptyString(t *testing.T) {
 	tok = l.Next()
 	assert.Equal(t, STRING, tok.Type)
 	assert.Equal(t, "b", tok.Text)
+}
+
+func TestPostalAddress(t *testing.T) {
+	g, _ := LoadGrammarFile("../examples/postal.bnf")
+
+	ok := []string{
+		"John Smith\n123 Main St\nSpringfield, MA 02139\n",
+		"J. Doe Jr.\n42 Elm St\nBoston, NY 10001\n",
+		"John A. Jane Smith Sr.\n42 Elm St Apt12\nBoston, MA 10001\n",
+	}
+
+	bad := []string{
+		"John Smith 123 Main St\nSpringfield, MA 02139\n",
+		"John Smith\n123 Main St\nSpringfield, MA\n",
+		"John Smith\n123 Main St Apt\nSpringfield, MA 02139\n",
+	}
+
+	for _, s := range ok {
+		assert.True(t, g.MatchFrom("postal-address", s), s)
+	}
+
+	for _, s := range bad {
+		assert.False(t, g.MatchFrom("postal-address", s), s)
+	}
 }

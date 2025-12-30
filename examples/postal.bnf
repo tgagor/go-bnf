@@ -1,0 +1,19 @@
+ <postal-address> ::= <name-part> <street-address> <zip-part>
+      <name-part> ::= <personal-part> <last-name> <opt-suffix-part> <EOL> | <personal-part> <name-part>
+  <personal-part> ::= <first-name> | <initial> "."
+ <street-address> ::= <house-num> <street-name> <opt-apt-num> <EOL>
+       <zip-part> ::= <town-name> "," <state-code> <ZIP-code> <EOL>
+<opt-suffix-part> ::= "Sr." | "Jr." | <roman-numeral> | ""
+    <opt-apt-num> ::= "Apt" <apt-num> | ""
+
+<first-name> ::= "John" | "Jane"
+<last-name> ::= "Smith" | "Doe"
+<initial> ::= "A" | "B" | "J"
+<roman-numeral> ::= "II" | "III" | "IV"
+<house-num> ::= "123" | "42"
+<street-name> ::= "Main St" | "Elm St"
+<apt-num> ::= "5A" | "12"
+<town-name> ::= "Springfield" | "Boston"
+<state-code> ::= "MA" | "NY"
+<ZIP-code> ::= "02139" | "10001"
+<EOL> ::= "\n"
