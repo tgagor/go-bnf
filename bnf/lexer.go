@@ -9,17 +9,17 @@ import (
 type TokenType int
 
 const (
-	EOF TokenType = iota
-	IDENT     // digit
-	NT_IDENT  // <digit>
-	STRING    // "a string"
-	ASSIGN    // ::=
-	PIPE      // |
-	STAR      // *
-	PLUS      // +
-	QMARK     // ?
-	LPAREN    // (
-	RPAREN    // )
+	EOF      TokenType = iota
+	IDENT              // digit
+	NT_IDENT           // <digit>
+	STRING             // "a string"
+	ASSIGN             // ::=
+	PIPE               // |
+	STAR               // *
+	PLUS               // +
+	QMARK              // ?
+	LPAREN             // (
+	RPAREN             // )
 	NEWLINE
 )
 
@@ -99,13 +99,14 @@ func (l *Lexer) Next() Token {
 		}
 
 		return Token{
-			Type: NT_IDENT,
+			Type: IDENT, // normalize NT_IDENT as <> are just a sugar here
 			Text: sb.String(),
 		}
 	}
 
 	// 3. string literal
-	if ch == '"' {
+	if ch == '"' || ch == '\'' {
+		quote := ch
 		var sb strings.Builder
 
 		for {
@@ -114,7 +115,7 @@ func (l *Lexer) Next() Token {
 				panic("unterminated string literal")
 			}
 
-			if ch == '"' {
+			if ch == quote {
 				break
 			}
 
@@ -126,6 +127,8 @@ func (l *Lexer) Next() Token {
 				switch esc {
 				case '"':
 					sb.WriteRune('"')
+				case '\'':
+					sb.WriteRune('\'')
 				case '\\':
 					sb.WriteRune('\\')
 				case 'n':
@@ -203,5 +206,5 @@ func isIdentStart(ch rune) bool {
 }
 
 func isIdentPart(ch rune) bool {
-	return isIdentStart(ch) || (ch >= '0' && ch <= '9')
+	return isIdentStart(ch) || (ch >= '0' && ch <= '9') || ch == '-'
 }
