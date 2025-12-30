@@ -1,0 +1,51 @@
+package bnf
+
+import (
+	"slices"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestOptionalTerminal(t *testing.T) {
+	g := &Optional{
+		Node: &Terminal{Value: "a"},
+	}
+
+	assert.Equal(t, []int{0, 1}, match(g, "a", 0))
+	assert.Equal(t, []int{0}, match(g, "", 0))
+}
+
+func TestOptionalSequence(t *testing.T) {
+	// "a"? "b"
+	seq := &Sequence{
+		Elements: []Node{
+			&Optional{Node: &Terminal{Value: "a"}},
+			&Terminal{Value: "b"},
+		},
+	}
+
+	assert.Equal(t, []int{2}, match(seq, "ab", 0)) // matched optional "a" and "b"
+	assert.Equal(t, []int{1}, match(seq, "b", 0))  // skipped optional "a", matched "b"
+	assert.Nil(t, match(seq, "a", 0))              // no "b" to match
+}
+
+func TestOptionalPlus_Terminal(t *testing.T) {
+	// a?+ should work as (a?)+
+	// not as a(+?)
+	node := &Repeat{
+		Node: &Optional{
+			Node: &Terminal{Value: "a"},
+		},
+		Min: 1,
+	}
+
+	ctx := NewContext("a")
+	assert.True(t, slices.Contains(ctx.Match(node, 0), 1))
+
+	ctx = NewContext("aa")
+	assert.True(t, slices.Contains(ctx.Match(node, 0), 2))
+
+	ctx = NewContext("")
+	assert.False(t, slices.Contains(ctx.Match(node, 0), 0))
+}

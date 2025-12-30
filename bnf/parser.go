@@ -97,6 +97,8 @@ func (p *Parser) parseFactor() ExprAST {
 	case QMARK:
 		p.eat(QMARK)
 		return &RepeatAST{Node: atom, Min: 0, Max: 1}
+		// TODO: consider adding OptionalAST
+		// return &OptionalAST{Node: atom}
 	}
 
 	return atom

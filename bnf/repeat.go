@@ -58,6 +58,7 @@ func (r *Repeat) match(ctx *Context, pos int) []int {
 		var next []int
 		for _, p := range current {
 			for _, m := range ctx.Match(r.Node, p) {
+				// safety check to prevent infinite loops
 				if m > p {
 					next = append(next, m)
 				}
