@@ -3,7 +3,8 @@ package bnf
 import "slices"
 
 type Node interface {
-	Match(input string, pos int) []int
+	// Match(input string, pos int) []int
+	match(ctx *Context, pos int) []int
 }
 
 type Rule struct {
@@ -43,17 +44,25 @@ func resolveNode(n Node, rules map[string]*Rule) {
 	}
 }
 
-func (g *Grammar) Match(input string) bool {
-	startRule, ok := g.Rules[g.Start]
-	if !ok {
-		panic("start rule not found: " + g.Start)
-	}
+// func (g *Grammar) Match(input string) bool {
+// 	startRule, ok := g.Rules[g.Start]
+// 	if !ok {
+// 		panic("start rule not found: " + g.Start)
+// 	}
 
-	matches := startRule.Expr.Match(input, 0)
+// 	matches := startRule.Expr.Match(input, 0)
+// 	return slices.Contains(matches, len(input))
+// }
+
+func (g *Grammar) Match(input string) bool {
+	start := g.Rules[g.Start]
+	ctx := NewContext(input)
+	matches := ctx.Match(start.Expr, 0)
 	return slices.Contains(matches, len(input))
 }
 
 func (g *Grammar) MatchPrefix(input string) bool {
 	start := g.Rules[g.Start]
-	return len(start.Expr.Match(input, 0)) > 0
+	ctx := NewContext(input)
+	return len(ctx.Match(start.Expr, 0)) > 0
 }

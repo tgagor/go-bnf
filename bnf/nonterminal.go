@@ -8,3 +8,7 @@ type NonTerminal struct {
 func (n *NonTerminal) Match(input string, pos int) []int {
 	return []int{0}
 }
+
+func (n *NonTerminal) match(ctx *Context, pos int) []int {
+	return []int{0}
+}
