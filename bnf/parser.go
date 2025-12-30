@@ -31,6 +31,12 @@ func (p *Parser) eat(t TokenType) Token {
 func (p *Parser) ParseGrammar() *GrammarAST {
 	var rules []*RuleAST
 	for p.look.Type != EOF {
+		// skip empty lines
+		if p.look.Type == NEWLINE {
+			p.eat(NEWLINE)
+			continue
+		}
+		// process rule otherwise
 		rules = append(rules, p.parseRule())
 	}
 	return &GrammarAST{Rules: rules}
@@ -40,6 +46,12 @@ func (p *Parser) parseRule() *RuleAST {
 	name := p.eat(IDENT).Text
 	p.eat(ASSIGN)
 	expr := p.parseExpr()
+
+	// optional NEWLINE
+	if p.look.Type == NEWLINE {
+		p.eat(NEWLINE)
+	}
+
 	return &RuleAST{Name: name, Expr: expr}
 }
 
@@ -60,6 +72,8 @@ func (p *Parser) parseExpr() ExprAST {
 
 func (p *Parser) parseSeq() ExprAST {
 	var elems []ExprAST
+	// if no match, then next token does not belong to the sequence
+	// so we stop parsing the sequence
 	for p.look.Type == IDENT || p.look.Type == STRING || p.look.Type == LPAREN {
 		elems = append(elems, p.parseFactor())
 	}
