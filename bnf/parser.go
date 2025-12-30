@@ -1,104 +1,122 @@
 package bnf
 
 import (
-	"bufio"
-	"fmt"
+	"io"
 	"os"
 	"strings"
 )
 
-type BNF struct {
-	File    string
-	Symbols map[string]*Expression
-	// Expressions map[string]*Expression
+type Parser struct {
+	lx   *Lexer
+	look Token
 }
 
-type Pattern struct {
-	Val any
-}
-
-func New(path string) *BNF {
-	return &BNF{
-		File:    path,
-		Symbols: map[string]*Expression{},
+func NewParser(r io.Reader) *Parser {
+	lx := NewLexer(r)
+	return &Parser{
+		lx:   lx,
+		look: lx.Next(),
 	}
 }
 
-func (p *BNF) GetSymbols() []string {
-	keys := make([]string, len(p.Symbols))
-	i := 0
-	for k := range p.Symbols {
-		keys[i] = k
-		i++
+func (p *Parser) eat(t TokenType) Token {
+	if p.look.Type != t {
+		panic("unexpected token: " + p.look.Text)
 	}
-	return keys
+	tok := p.look
+	p.look = p.lx.Next()
+	return tok
 }
 
-func (p *BNF) GetSymbol(name string) *Expression {
-	return p.Symbols[name]
+func (p *Parser) ParseGrammar() *GrammarAST {
+	var rules []*RuleAST
+	for p.look.Type != EOF {
+		rules = append(rules, p.parseRule())
+	}
+	return &GrammarAST{Rules: rules}
 }
 
-func (p *BNF) Load() error {
-	file, err := os.Open(p.File)
+func (p *Parser) parseRule() *RuleAST {
+	name := p.eat(IDENT).Text
+	p.eat(ASSIGN)
+	expr := p.parseExpr()
+	return &RuleAST{Name: name, Expr: expr}
+}
+
+func (p *Parser) parseExpr() ExprAST {
+	left := p.parseSeq()
+	options := []ExprAST{left}
+
+	for p.look.Type == PIPE {
+		p.eat(PIPE)
+		options = append(options, p.parseSeq())
+	}
+
+	if len(options) == 1 {
+		return left
+	}
+	return &ChoiceAST{Options: options}
+}
+
+func (p *Parser) parseSeq() ExprAST {
+	var elems []ExprAST
+	for p.look.Type == IDENT || p.look.Type == STRING || p.look.Type == LPAREN {
+		elems = append(elems, p.parseFactor())
+	}
+
+	if len(elems) == 1 {
+		return elems[0]
+	}
+	return &SeqAST{Elements: elems}
+}
+
+func (p *Parser) parseFactor() ExprAST {
+	atom := p.parseAtom()
+
+	switch p.look.Type {
+	case STAR:
+		p.eat(STAR)
+		return &RepeatAST{Node: atom, Min: 0, Max: -1}
+	case PLUS:
+		p.eat(PLUS)
+		return &RepeatAST{Node: atom, Min: 1, Max: -1}
+	case QMARK:
+		p.eat(QMARK)
+		return &RepeatAST{Node: atom, Min: 0, Max: 1}
+	}
+
+	return atom
+}
+
+func (p *Parser) parseAtom() ExprAST {
+	switch p.look.Type {
+	case IDENT:
+		return &IdentAST{Name: p.eat(IDENT).Text}
+	case STRING:
+		return &StringAST{Value: p.eat(STRING).Text}
+	case LPAREN:
+		p.eat(LPAREN)
+		e := p.parseExpr()
+		p.eat(RPAREN)
+		return e
+	}
+	panic("unexpected token")
+}
+
+func LoadGrammarFile(path string) (*Grammar, error) {
+	f, err := os.Open(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer file.Close()
+	defer f.Close()
 
-	reader := bufio.NewScanner(file)
-	for reader.Scan() {
-		line := reader.Text()
-		p.ParseLine(line)
-		// p.Expressions[rule.Name] = &rule
-	}
-	fmt.Printf("Expressions: %+v\n", p.Symbols)
-
-	return nil
+	p := NewParser(f)
+	ast := p.ParseGrammar()
+	return BuildGrammar(ast), nil
 }
 
-func FromFile(path string) (*BNF, error) {
-	b := New(path)
-	e := b.Load()
-	return b, e
-}
-
-func (p *BNF) ParseLine(line string) {
-	split := strings.Split(line, "::=")
-
-	name := strings.TrimSpace(split[0])
-	patterns := p.ParseExpression(name, split[1])
-
-	p.Symbols[name] = &Expression{
-		Name:     name,
-		Patterns: patterns,
-	}
-}
-
-func (p *BNF) ParseExpression(name string, line string) (patterns []string) {
-	patternSets := strings.Split(line, "|")
-	patterns = []string{}
-	for _, patternStr := range patternSets {
-		// clean cases
-		patternStr = strings.TrimSpace(patternStr)
-		for _, symbol := range strings.Split(patternStr, " ") {
-			// terminal, literal expression
-			if strings.HasPrefix(symbol, "\"") && strings.HasSuffix(symbol, "\"") {
-				// patterns = append(patterns, &Pattern{
-				// 	Val: symbol,
-				// })
-				patterns = append(patterns, symbol)
-			} else if strings.HasPrefix(symbol, "<") && strings.HasSuffix(symbol, ">") {
-				// non-terminal, pointing to another expression
-				// patterns = append(patterns, &Pattern{
-				// 	Val: symbol,
-				// })
-				patterns = append(patterns, symbol)
-			} else {
-				fmt.Println("Unknown expression:", symbol)
-				os.Exit(2)
-			}
-		}
-	}
-
-	return patterns
+func LoadGrammarString(s string) *Grammar {
+	p := NewParser(strings.NewReader(s))
+	ast := p.ParseGrammar()
+	return BuildGrammar(ast)
 }

@@ -1,5 +1,7 @@
 package bnf
 
+import "fmt"
+
 type memoKey struct {
 	node Node
 	pos  int
@@ -23,12 +25,19 @@ func NewContext(input string) *Context {
 }
 
 func (ctx *Context) Match(node Node, pos int) []int {
+	// fmt.Printf("MATCH %T %p @ %d\n", node, node, pos)
 	key := memoKey{node: node, pos: pos}
+
+	// just in case
+	if node == nil {
+		panic("nil node in Context!")
+	}
 
 	// 1. If already calculared - return cache
 	if entry, ok := ctx.memo[key]; ok {
 		// if still counting -> left recurency
 		if entry.inProgress {
+			fmt.Printf("LEFT RECURSION DETECTED: %T %p @ %d\n", node, node, pos)
 			return nil
 		}
 		return entry.results

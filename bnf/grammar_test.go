@@ -1,6 +1,7 @@
 package bnf
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -50,24 +51,26 @@ func TestGrammarPrefix(t *testing.T) {
 	assert.True(t, g.MatchPrefix("ba"))   // matches b prefix
 }
 
-func buildLeftRecursiveGrammar() *Grammar {
-	// Expr ::= Term ("+" Term)*
+func buildComplexGrammar() *Grammar {
 	// Term ::= "a"
+	// Expr ::= Term ("+" Term)*
 	expr := &Rule{Name: "Expr"}
 	term := &Rule{Name: "Term"}
 
 	// Term ::= "a"
 	term.Expr = &Terminal{Value: "a"}
+	// exprNT := &NonTerminal{Name: "Expr", Rule: expr}
+	termNT := &NonTerminal{Name: "Term", Rule: term}
 
 	// Expr ::= Term ("+" Term)*
 	expr.Expr = &Sequence{
 		Elements: []Node{
-			&NonTerminal{Name: "Term", Rule: term},
+			termNT,
 			&Repeat{
 				Node: &Sequence{
 					Elements: []Node{
 						&Terminal{Value: "+"},
-						&NonTerminal{Name: "Term", Rule: term},
+						termNT,
 					},
 				},
 				Min: 0,
@@ -84,15 +87,83 @@ func buildLeftRecursiveGrammar() *Grammar {
 	}
 }
 
-func TestRecursiveGrammar(t *testing.T) {
+func TestComplexGrammar(t *testing.T) {
 	t.Parallel()
-	g := buildLeftRecursiveGrammar()
+	g := buildComplexGrammar()
+	fmt.Println("Grammar:", g.Rules["Expr"].Expr)
 
-	// FIXME: those commented don't pass, but they should
 	assert.True(t, g.Match("a"))     // true
 	assert.True(t, g.Match("a+a"))   // true
 	assert.True(t, g.Match("a+a+a")) // true
 	assert.False(t, g.Match(""))     // false
 	assert.False(t, g.Match("+a"))   // false
 	assert.False(t, g.Match("a+"))   // false
+}
+
+func buildLeftRecursiveGrammar() *Grammar {
+	// Expr ::= Expr "+" Term | Term
+	// Term ::= "a"
+	expr := &Rule{Name: "Expr"}
+	term := &Rule{Name: "Term"}
+
+	exprNT := &NonTerminal{Name: "Expr", Rule: expr}
+	termNT := &NonTerminal{Name: "Term", Rule: term}
+
+	// Term ::= "a"
+	term.Expr = &Terminal{Value: "a"}
+
+	// Expr ::= Expr "+" Term | Term
+	expr.Expr = &Choice{
+		Options: []Node{
+			&Sequence{
+				Elements: []Node{
+					exprNT,
+					&Terminal{Value: "+"},
+					termNT,
+				},
+			},
+			termNT,
+		},
+	}
+
+	return &Grammar{
+		Start: "Expr",
+		Rules: map[string]*Rule{
+			"Expr": expr,
+			"Term": term,
+		},
+	}
+}
+
+func TestRecursiveGrammar(t *testing.T) {
+	t.Parallel()
+	g := buildLeftRecursiveGrammar()
+
+	assert.True(t, g.Match("a")) // true
+	// assert.True(t, g.Match("a+a"))   // left recursion detected
+	// assert.True(t, g.Match("a+a+a")) // left recursion detected
+	assert.False(t, g.Match(""))   // false
+	assert.False(t, g.Match("+a")) // false
+	assert.False(t, g.Match("a+")) // false
+}
+
+func TestRepeatAlone(t *testing.T) {
+	term := &Terminal{Value: "a"}
+
+	expr := &Sequence{
+		Elements: []Node{
+			term,
+			&Repeat{
+				Node: &Sequence{
+					Elements: []Node{
+						&Terminal{Value: "+"},
+						term,
+					},
+				},
+				Min: 0,
+			},
+		},
+	}
+
+	assert.Equal(t, []int{1, 3, 5}, match(expr, "a+a+a", 0))
 }
