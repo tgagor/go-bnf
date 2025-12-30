@@ -10,15 +10,16 @@ type TokenType int
 
 const (
 	EOF TokenType = iota
-	IDENT
-	STRING
-	ASSIGN // ::=
-	PIPE   // |
-	STAR   // *
-	PLUS   // +
-	QMARK  // ?
-	LPAREN // (
-	RPAREN // )
+	IDENT     // digit
+	NT_IDENT  // <digit>
+	STRING    // "a string"
+	ASSIGN    // ::=
+	PIPE      // |
+	STAR      // *
+	PLUS      // +
+	QMARK     // ?
+	LPAREN    // (
+	RPAREN    // )
 	NEWLINE
 )
 
@@ -71,6 +72,34 @@ func (l *Lexer) Next() Token {
 
 		return Token{
 			Type: IDENT,
+			Text: sb.String(),
+		}
+	}
+
+	// 2.5. <identificator>
+	if ch == '<' {
+		var sb strings.Builder
+
+		for {
+			ch, _, err := l.r.ReadRune()
+			if err != nil {
+				panic("unterminated <identifier>")
+			}
+			if ch == '>' {
+				break
+			}
+			if !isIdentPart(ch) {
+				panic("invalid character in <identifier>: " + string(ch))
+			}
+			sb.WriteRune(ch)
+		}
+
+		if sb.Len() == 0 {
+			panic("empty <identifier>")
+		}
+
+		return Token{
+			Type: NT_IDENT,
 			Text: sb.String(),
 		}
 	}
@@ -130,8 +159,17 @@ func (l *Lexer) Next() Token {
 		panic("expected ::=")
 	}
 
-	// 4.5 NEWLINE
+	// 4.5 NEWLINE end of line
 	if ch == '\n' {
+		return Token{Type: NEWLINE, Text: "\n"}
+	}
+	// 4.6 Windows, or old Mac style new line
+	if ch == '\r' {
+		// check if it's not \r\n
+		next, _, err := l.r.ReadRune()
+		if err == nil && next != '\n' {
+			l.r.UnreadRune()
+		}
 		return Token{Type: NEWLINE, Text: "\n"}
 	}
 
@@ -155,7 +193,7 @@ func (l *Lexer) Next() Token {
 }
 
 func isWhitespace(ch rune) bool {
-	return ch == ' ' || ch == '\t' || ch == '\r'
+	return ch == ' ' || ch == '\t'
 }
 
 func isIdentStart(ch rune) bool {

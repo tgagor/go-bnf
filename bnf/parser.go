@@ -106,6 +106,8 @@ func (p *Parser) parseAtom() ExprAST {
 	switch p.look.Type {
 	case IDENT:
 		return &IdentAST{Name: p.eat(IDENT).Text}
+	case NT_IDENT:
+		return &IdentAST{Name: p.eat(NT_IDENT).Text}
 	case STRING:
 		return &StringAST{Value: p.eat(STRING).Text}
 	case LPAREN:

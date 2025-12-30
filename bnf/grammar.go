@@ -55,9 +55,20 @@ func resolveNode(n Node, rules map[string]*Rule) {
 // }
 
 func (g *Grammar) Match(input string) bool {
-	start := g.Rules[g.Start]
+	if g.Start == "" {
+		panic("start rule not defined")
+	}
+	return g.MatchFrom(g.Start, input)
+}
+
+func (g *Grammar) MatchFrom(start string, input string) bool {
+	rule, ok := g.Rules[start]
+	if !ok {
+		panic("unknown start rule: " + start)
+	}
+
 	ctx := NewContext(input)
-	matches := ctx.Match(start.Expr, 0)
+	matches := ctx.Match(rule.Expr, 0)
 	return slices.Contains(matches, len(input))
 }
 
