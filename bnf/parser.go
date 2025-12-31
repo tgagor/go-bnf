@@ -9,6 +9,7 @@ import (
 type Parser struct {
 	lx   *Lexer
 	look Token
+	peek Token
 }
 
 func NewParser(r io.Reader) *Parser {
@@ -16,6 +17,7 @@ func NewParser(r io.Reader) *Parser {
 	return &Parser{
 		lx:   lx,
 		look: lx.Next(),
+		peek: lx.Next(),
 	}
 }
 
@@ -24,7 +26,8 @@ func (p *Parser) eat(t TokenType) Token {
 		panic("unexpected token: " + p.look.Text)
 	}
 	tok := p.look
-	p.look = p.lx.Next()
+	p.look = p.peek
+	p.peek = p.lx.Next()
 	return tok
 }
 
@@ -55,13 +58,44 @@ func (p *Parser) parseRule() *RuleAST {
 	return &RuleAST{Name: name, Expr: expr}
 }
 
+// func (p *Parser) parseExpr() ExprAST {
+// 	left := p.parseSeq()
+// 	options := []ExprAST{left}
+
+// 	for p.look.Type == PIPE {
+// 		p.eat(PIPE)
+// 		options = append(options, p.parseSeq())
+// 	}
+
+// 	if len(options) == 1 {
+// 		return left
+// 	}
+// 	return &ChoiceAST{Options: options}
+// }
+
 func (p *Parser) parseExpr() ExprAST {
+	p.skipNewlines()
+
 	left := p.parseSeq()
 	options := []ExprAST{left}
 
-	for p.look.Type == PIPE {
-		p.eat(PIPE)
-		options = append(options, p.parseSeq())
+	for {
+		p.skipNewlines()
+
+		// multiline alternative
+		if p.look.Type == PIPE {
+			p.eat(PIPE)
+			p.skipNewlines()
+			options = append(options, p.parseSeq())
+			continue
+		}
+
+		// STOP: next rule starts
+		if p.isRuleStart() || p.look.Type == EOF {
+			break
+		}
+
+		break
 	}
 
 	if len(options) == 1 {
@@ -70,19 +104,49 @@ func (p *Parser) parseExpr() ExprAST {
 	return &ChoiceAST{Options: options}
 }
 
+// func (p *Parser) parseSeq() ExprAST {
+// 	var elems []ExprAST
+// 	// if no match, then next token does not belong to the sequence
+// 	// so we stop parsing the sequence
+// 	for p.look.Type == IDENT || p.look.Type == STRING || p.look.Type == LPAREN {
+// 		elems = append(elems, p.parseFactor())
+// 	}
+
+// 	if len(elems) == 1 {
+// 		return elems[0]
+// 	}
+// 	return &SeqAST{Elements: elems}
+// }
+
 func (p *Parser) parseSeq() ExprAST {
 	var elems []ExprAST
-	// if no match, then next token does not belong to the sequence
-	// so we stop parsing the sequence
-	for p.look.Type == IDENT || p.look.Type == STRING || p.look.Type == LPAREN {
-		elems = append(elems, p.parseFactor())
+
+	for {
+		p.skipNewlines()
+
+		// STOP conditions
+		if p.look.Type == PIPE || p.isRuleStart() || p.look.Type == EOF {
+			break
+		}
+
+		switch p.look.Type {
+		case IDENT, STRING, LPAREN:
+			elems = append(elems, p.parseFactor())
+		default:
+			return singleOrSeq(elems)
+		}
 	}
 
+	return singleOrSeq(elems)
+}
+
+func singleOrSeq(elems []ExprAST) ExprAST {
 	if len(elems) == 1 {
 		return elems[0]
 	}
 	return &SeqAST{Elements: elems}
 }
+
 
 func (p *Parser) parseFactor() ExprAST {
 	atom := p.parseAtom()
@@ -119,6 +183,16 @@ func (p *Parser) parseAtom() ExprAST {
 		return e
 	}
 	panic("unexpected token")
+}
+
+func (p *Parser) skipNewlines() {
+	for p.look.Type == NEWLINE {
+		p.eat(NEWLINE)
+	}
+}
+
+func (p *Parser) isRuleStart() bool {
+	return p.look.Type == IDENT && p.peek.Type == ASSIGN
 }
 
 func LoadGrammarIOReader(r io.Reader) *Grammar {
