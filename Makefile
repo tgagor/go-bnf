@@ -15,8 +15,9 @@ run:
 
 build:
 	go build \
-		-ldflags="-X main.BuildVersion=$(VERSION)" \
+		-ldflags="-w -s -X main.BuildVersion=$(VERSION)" -gcflags=all="-l -B" \
 		-o bin/bnf .
+	@du -sh bin/bnf
 
 test:
 	go test -v ./...
