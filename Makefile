@@ -26,6 +26,9 @@ integration-test: bin/bnf
 	./bin/bnf -l -g examples/numbers.bnf -i examples/numbers.test
 	./bin/bnf -l -g examples/hour.bnf -i examples/hour.test
 	cat examples/postal1.txt | ./bin/bnf -g ./examples/postal.bnf
+	cat examples/postal2.txt | ./bin/bnf -g ./examples/postal.bnf
+	cat examples/postal3.txt | ./bin/bnf -g ./examples/postal.bnf
+	cat examples/postal4.txt | ./bin/bnf -g ./examples/postal.bnf
 
 install: bin/bnf
 	@mkdir -p $(GOBIN)
