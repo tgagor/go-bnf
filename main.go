@@ -1,54 +1,52 @@
 package main
 
 import (
-	"go-bnf/bnf"
-	"bufio"
+	"go-bnf/cmd"
 	"fmt"
 	"os"
-	"strings"
+	"flag"
 )
 
 var BuildVersion string // Will be set dynamically at build time.
 var appName string = "bnf"
 
-func loadExamples(file string) ([]string, error) {
-	f, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	var lines []string
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		lines = append(lines, strings.TrimSpace(scanner.Text()))
-	}
-	return lines, scanner.Err()
-}
+var grammarFile string
+var inputFile string
+var help bool
+var version bool
+var lineByLine bool
 
 func main() {
-	args := os.Args[1:]
-	grammarFile := args[0]
-	examplesFile := args[1]
 
-	fmt.Println("Parsing:", grammarFile)
-	g, err := bnf.LoadGrammarFile(grammarFile)
-	if err != nil {
-		fmt.Println("Parsing error:", err)
+	// parse arguments
+	flag.StringVar(&grammarFile, "g", "", "Path to the BNF grammar file")
+	flag.StringVar(&inputFile, "i", "", "Path to the input file to verify against the grammar")
+	flag.BoolVar(&lineByLine, "l", false, "Verify input line by line otherwise as a whole")
+	flag.BoolVar(&help, "h", false, "Show help")
+	flag.BoolVar(&version, "v", false, "Show version")
+	flag.Parse()
+
+	if help {
+		fmt.Println("Usage: bnf -g <grammar-file> -i <input-file>")
+		fmt.Println("   or: cat <input-file> | bnf -g <grammar-file>")
+		flag.PrintDefaults()
+		os.Exit(0)
+	}
+
+	if version {
+		fmt.Printf("%s version: %s\n", appName, BuildVersion)
+		os.Exit(0)
+	}
+
+	if grammarFile == "" {
+		fmt.Println("Usage: bnf -g <grammar-file> -i <input-file>")
+		fmt.Println("   or: cat <input-file> | bnf -g <grammar-file>")
 		os.Exit(1)
 	}
-	fmt.Println("Grammar loaded.")
 
-	fmt.Println("Loading examples...")
-	examples, err := loadExamples(examplesFile)
-
-	for _, e := range examples {
-		fmt.Printf("Checking: %s", e)
-		if g.Match(e) {
-			fmt.Println(" -> matched")
-		} else {
-			fmt.Println(" -> not matched")
-		}
+	cli := cmd.New(BuildVersion, appName, grammarFile, inputFile, lineByLine)
+	if err := cli.Run(); err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
 	}
-
 }

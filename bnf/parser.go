@@ -121,6 +121,12 @@ func (p *Parser) parseAtom() ExprAST {
 	panic("unexpected token")
 }
 
+func LoadGrammarIOReader(r io.Reader) *Grammar {
+	p := NewParser(r)
+	ast := p.ParseGrammar()
+	return BuildGrammar(ast)
+}
+
 func LoadGrammarFile(path string) (*Grammar, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -128,13 +134,9 @@ func LoadGrammarFile(path string) (*Grammar, error) {
 	}
 	defer f.Close()
 
-	p := NewParser(f)
-	ast := p.ParseGrammar()
-	return BuildGrammar(ast), nil
+	return LoadGrammarIOReader(f), nil
 }
 
 func LoadGrammarString(s string) *Grammar {
-	p := NewParser(strings.NewReader(s))
-	ast := p.ParseGrammar()
-	return BuildGrammar(ast)
+	return LoadGrammarIOReader(strings.NewReader(s))
 }

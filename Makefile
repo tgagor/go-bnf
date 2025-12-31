@@ -7,7 +7,11 @@ run:
 	go run \
 		-ldflags="-X main.BuildVersion=$(VERSION)" \
 		. \
-		./examples/numbers.bnf ./examples/numbers.test
+		-g examples/numbers.bnf -i examples/numbers.test
+	cat examples/numbers.test | go run \
+		-ldflags="-X main.BuildVersion=$(VERSION)" \
+		. \
+		-g examples/numbers.bnf
 
 build:
 	go build \
@@ -16,6 +20,11 @@ build:
 
 test:
 	go test -v ./...
+
+integration-test: bin/bnf
+	./bin/bnf -l -g examples/numbers.bnf -i examples/numbers.test
+	./bin/bnf -l -g examples/hour.bnf -i examples/hour.test
+	cat examples/postal1.txt | ./bin/bnf -g ./examples/postal.bnf
 
 install: bin/bnf
 	@mkdir -p $(GOBIN)
