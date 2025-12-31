@@ -7,11 +7,11 @@ run:
 	go run \
 		-ldflags="-X main.BuildVersion=$(VERSION)" \
 		. \
-		-g examples/numbers.bnf -i examples/numbers.test
+		-l -g examples/numbers.bnf -i examples/numbers.test
 	cat examples/numbers.test | go run \
 		-ldflags="-X main.BuildVersion=$(VERSION)" \
 		. \
-		-g examples/numbers.bnf
+		-l -g examples/numbers.bnf
 
 build:
 	go build \

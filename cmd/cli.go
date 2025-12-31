@@ -49,13 +49,13 @@ func loadByLine(file string) ([]string, error) {
 	return lines, scanner.Err()
 }
 
-func loadWhole(file string) (string, error) {
+func loadWhole(file string) ([]string, error) {
 	var f *os.File
 	var err error
 	if file != "" {
 		f, err = os.Open(file)
 		if err != nil {
-			return "", err
+			return []string{}, err
 		}
 		defer f.Close()
 	} else {
@@ -65,9 +65,9 @@ func loadWhole(file string) (string, error) {
 
 	content, err := os.ReadFile(f.Name())
 	if err != nil {
-		return "", err
+		return []string{}, err
 	}
-	return string(content), nil
+	return []string{string(content),}, nil
 }
 
 func (cli *CLI) Run() error {
@@ -80,30 +80,22 @@ func (cli *CLI) Run() error {
 	fmt.Println("Grammar loaded.")
 
 	fmt.Println("Loading input...")
-	if !cli.LineByLine {
-		whole, err := loadWhole(cli.VerifyFile)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("Checking whole input...")
-		match, err := g.Match(whole)
-		if match {
-			fmt.Println(" -> matched")
-		} else {
-			fmt.Printf("\n%s\n", err.(*bnf.ParseError).Pretty(whole))
-		}
-		return nil
+	var tokens []string
+	if cli.LineByLine {
+		fmt.Println("Checking line by line...")
+		tokens, err = loadByLine(cli.VerifyFile)
+	} else {
+		fmt.Println("Checking whole input...")
+		tokens, err = loadWhole(cli.VerifyFile)
 	}
 
-	lines, err := loadByLine(cli.VerifyFile)
-
-	for _, l := range lines {
+	for _, l := range tokens {
 		fmt.Printf("Checking: %s", l)
 		match, err := g.Match(l)
 		if match {
 			fmt.Println(" -> matched")
 		} else {
-			fmt.Printf("\n%s\n", err.(*bnf.ParseError).Pretty(l))
+			fmt.Printf("\n%s\n\n", err.(*bnf.ParseError).Pretty(l))
 		}
 	}
 
