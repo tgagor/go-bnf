@@ -1,12 +1,15 @@
 package main
 
 import (
-	"bnf-test/bnf"
+	"go-bnf/bnf"
 	"bufio"
 	"fmt"
 	"os"
 	"strings"
 )
+
+var BuildVersion string // Will be set dynamically at build time.
+var appName string = "bnf"
 
 func loadExamples(file string) ([]string, error) {
 	f, err := os.Open(file)
