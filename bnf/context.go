@@ -73,10 +73,15 @@ func (ctx *Context) Match(node Node, pos int) []int {
 	// we're looking for the farthest position reached
 	// if pos < farthest, ignore
 	// if pos > farthest, update farthest
-	// if pos == farthest, we stay with first match here (but we could provide all alternatives tried)
-	if len(results) == 0 && ctx.CurrentPos > ctx.FarthestPos {
+	// if pos == farthest, merge expected tokens, to list them all
+	if len(results) == 0 {
+		if ctx.error == nil || ctx.CurrentPos > ctx.FarthestPos {
 			ctx.FarthestPos = ctx.CurrentPos
             ctx.error = ctx.makeError(node)
+		} else if ctx.CurrentPos == ctx.FarthestPos {
+			// merge expected tokens
+			ctx.error.Expected = mergeExpected(ctx.error.Expected, node.Expect())
+		}
 	}
 
 	return results
@@ -92,9 +97,28 @@ func (ctx *Context) makeError(n Node) *ParseError {
 		RuleStack: ctx.stackSnapshot(),
 		Expected:  n.Expect(),
 		Found:     ctx.foundAt(ctx.FarthestPos),
+		Width:     expectedWidth(n.Expect()),
 	}
 }
 
+func mergeExpected(a, b []string) []string {
+	seen := make(map[string]bool)
+	var out []string
+
+	for _, x := range a {
+		if !seen[x] {
+			seen[x] = true
+			out = append(out, x)
+		}
+	}
+	for _, x := range b {
+		if !seen[x] {
+			seen[x] = true
+			out = append(out, x)
+		}
+	}
+	return out
+}
 
 
 func lineCol(input string, pos int) (line, col int) {
@@ -139,6 +163,23 @@ func runeAt(s string, pos int) (rune, int) {
 		}
 	}
 	return 0, 0
+}
+
+func expectedWidth(expected []string) int {
+	max := 0
+	for _, e := range expected {
+		// interesują nas tylko string literals
+		if len(e) >= 2 && e[0] == '"' && e[len(e)-1] == '"' {
+			w := len([]rune(e[1 : len(e)-1]))
+			if w > max {
+				max = w
+			}
+		}
+	}
+	if max == 0 {
+		return 1
+	}
+	return max
 }
 
 

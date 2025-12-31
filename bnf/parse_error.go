@@ -49,7 +49,11 @@ func (e *ParseError) Pretty(input string) string {
 		sb.WriteString("\nFound: ")
 		sb.WriteString(e.Found)
 		sb.WriteString(" expected one of: ")
-		sb.WriteString(strings.Join(e.Expected, ", "))
+		terms := filterTerminals(e.Expected)
+		if len(terms) == 0 {
+			terms = e.Expected // fallback
+		}
+		sb.WriteString(strings.Join(terms, ", "))
 	}
 
 	return sb.String()
@@ -69,4 +73,20 @@ func extractLine(input string, pos int) string {
 	}
 
 	return string(runes[start:end])
+}
+
+func filterTerminals(expected []string) []string {
+	var out []string
+	seen := map[string]bool{}
+
+	for _, e := range expected {
+		// terminal = string literal
+		if len(e) >= 2 && e[0] == '"' && e[len(e)-1] == '"' {
+			if !seen[e] {
+				seen[e] = true
+				out = append(out, e)
+			}
+		}
+	}
+	return out
 }

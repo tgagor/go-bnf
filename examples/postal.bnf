@@ -1,10 +1,10 @@
  <postal-address> ::= <name-part> <street-address> <zip-part>
-      <name-part> ::= <personal-part> <space> <last-name> <space> <opt-suffix-part> <EOL> | <personal-part> <name-part>
+      <name-part> ::= <personal-part> <space> <last-name> <opt-suffix-part> <EOL> | <personal-part> <name-part>
   <personal-part> ::= <first-name> | <initial> "."
- <street-address> ::= <house-num> <street-name> <opt-apt-num> <EOL>
-       <zip-part> ::= <town-name> "," <state-code> <ZIP-code> <EOL>
-<opt-suffix-part> ::= "Sr." | "Jr." | <roman-numeral> | ""
-    <opt-apt-num> ::= "Apt" <apt-num> | ""
+ <street-address> ::= <house-num> <space> <street-name> <opt-apt-num> <EOL>
+       <zip-part> ::= <town-name> "," <space> <state-code> <space> <ZIP-code> <EOL>
+<opt-suffix-part> ::= <space> ("Sr." | "Jr." | <roman-numeral>) | ""
+    <opt-apt-num> ::= <space> "Apt" <apt-num> | ""
 
 <first-name> ::= "John" | "Jane"
 <last-name> ::= "Smith" | "Doe"
