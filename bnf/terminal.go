@@ -1,21 +1,9 @@
 package bnf
 
+import "fmt"
+
 type Terminal struct {
 	Value string
-}
-
-func (t *Terminal) Match(input string, pos int) []int {
-	// if end of input, no match
-	if pos+len(t.Value) > len(input) {
-		return nil
-	}
-
-	// check if part matches
-	if input[pos:pos+len(t.Value)] == t.Value {
-		return []int{pos + len(t.Value)}
-	}
-
-	return nil
 }
 
 func (t *Terminal) match(ctx *Context, pos int) []int {
@@ -26,4 +14,8 @@ func (t *Terminal) match(ctx *Context, pos int) []int {
 		return []int{pos + len(t.Value)}
 	}
 	return nil
+}
+
+func (t *Terminal) Expect() []string {
+    return []string{fmt.Sprintf("%q", t.Value)}
 }

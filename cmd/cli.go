@@ -79,17 +79,18 @@ func (cli *CLI) Run() error {
 	}
 	fmt.Println("Grammar loaded.")
 
-	fmt.Println("Loading examples...")
+	fmt.Println("Loading input...")
 	if !cli.LineByLine {
 		whole, err := loadWhole(cli.VerifyFile)
 		if err != nil {
 			return err
 		}
 		fmt.Printf("Checking whole input...")
-		if g.Match(whole) {
+		match, err := g.Match(whole)
+		if match {
 			fmt.Println(" -> matched")
 		} else {
-			fmt.Println(" -> not matched")
+			fmt.Printf("\n%s", err)
 		}
 		return nil
 	}
@@ -98,10 +99,11 @@ func (cli *CLI) Run() error {
 
 	for _, e := range examples {
 		fmt.Printf("Checking: %s", e)
-		if g.Match(e) {
+		match, err := g.Match(e)
+		if match {
 			fmt.Println(" -> matched")
 		} else {
-			fmt.Println(" -> not matched")
+			fmt.Printf("\n%s", err)
 		}
 	}
 

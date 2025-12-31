@@ -5,13 +5,20 @@ type NonTerminal struct {
 	Rule *Rule // will be set up in 2nd pass
 }
 
-// func (n *NonTerminal) Match(input string, pos int) []int {
-// 	return []int{0}
-// }
-
 func (n *NonTerminal) match(ctx *Context, pos int) []int {
 	if n.Rule == nil {
 		panic("NonTerminal without Rule: " + n.Name)
 	}
+
+	// debug / call stack tracking
+	// only here as only NonTerminal prodive meaningful rules
+	// that users can understand
+	ctx.push(n.Name)
+	defer ctx.pop()
+
 	return ctx.Match(n.Rule.Expr, pos)
+}
+
+func (n *NonTerminal) Expect() []string {
+    return []string{n.Name}
 }

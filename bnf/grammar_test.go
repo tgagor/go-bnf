@@ -32,11 +32,25 @@ func TestGrammar(t *testing.T) {
 	t.Parallel()
 	g := buildSimpleGrammar()
 
-	assert.True(t, g.Match("b"))    // true
-	assert.True(t, g.Match("ab"))   // true
-	assert.True(t, g.Match("aaab")) // true
-	assert.False(t, g.Match("aaa")) // false
-	assert.False(t, g.Match("ba"))  // false
+	ok, err := g.Match("b")
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
+	ok, err = g.Match("ab")
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
+	ok, err = g.Match("aaab")
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
+	ok, err = g.Match("aaa")
+	assert.False(t, ok)
+	assert.Error(t, err)
+
+	ok, err = g.Match("ba")
+	assert.False(t, ok)
+	assert.Error(t, err)
 }
 
 func TestGrammarPrefix(t *testing.T) {
@@ -92,12 +106,29 @@ func TestComplexGrammar(t *testing.T) {
 	g := buildComplexGrammar()
 	fmt.Println("Grammar:", g.Rules["Expr"].Expr)
 
-	assert.True(t, g.Match("a"))     // true
-	assert.True(t, g.Match("a+a"))   // true
-	assert.True(t, g.Match("a+a+a")) // true
-	assert.False(t, g.Match(""))     // false
-	assert.False(t, g.Match("+a"))   // false
-	assert.False(t, g.Match("a+"))   // false
+	ok, err := g.Match("a")
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
+	ok, err = g.Match("a+a")
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
+	ok, err = g.Match("a+a+a")
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
+	ok, err = g.Match("")
+	assert.False(t, ok)
+	assert.Error(t, err)
+
+	ok, err = g.Match("+a")
+	assert.False(t, ok)
+	assert.Error(t, err)
+
+	ok, err = g.Match("a+")
+	assert.False(t, ok)
+	assert.Error(t, err)
 }
 
 func buildLeftRecursiveGrammar() *Grammar {
@@ -139,12 +170,24 @@ func TestRecursiveGrammar(t *testing.T) {
 	t.Parallel()
 	g := buildLeftRecursiveGrammar()
 
-	assert.True(t, g.Match("a")) // true
+	ok, err := g.Match("a")
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
 	// assert.True(t, g.Match("a+a"))   // left recursion detected
 	// assert.True(t, g.Match("a+a+a")) // left recursion detected
-	assert.False(t, g.Match(""))   // false
-	assert.False(t, g.Match("+a")) // false
-	assert.False(t, g.Match("a+")) // false
+
+	ok, err = g.Match("")
+	assert.False(t, ok)
+	assert.Error(t, err)
+
+	ok, err = g.Match("+a")
+	assert.False(t, ok)
+	assert.Error(t, err)
+
+	ok, err = g.Match("a+")
+	assert.False(t, ok)
+	assert.Error(t, err)
 }
 
 func TestRepeatAlone(t *testing.T) {

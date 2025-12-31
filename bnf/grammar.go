@@ -1,10 +1,12 @@
 package bnf
 
-import "slices"
+import (
+	"slices"
+)
 
 type Node interface {
-	// Match(input string, pos int) []int
 	match(ctx *Context, pos int) []int
+	Expect() []string // for error reporting, node types expected at this point
 }
 
 type Rule struct {
@@ -48,14 +50,14 @@ func (g *Grammar) SetStart(name string) {
 	g.Start = name
 }
 
-func (g *Grammar) Match(input string) bool {
+func (g *Grammar) Match(input string) (bool, error) {
 	if g.Start == "" {
 		panic("start rule not defined")
 	}
 	return g.MatchFrom(g.Start, input)
 }
 
-func (g *Grammar) MatchFrom(start string, input string) bool {
+func (g *Grammar) MatchFrom(start string, input string) (bool, error)  {
 	rule, ok := g.Rules[start]
 	if !ok {
 		panic("unknown start rule: " + start)
@@ -63,7 +65,11 @@ func (g *Grammar) MatchFrom(start string, input string) bool {
 
 	ctx := NewContext(input)
 	matches := ctx.Match(rule.Expr, 0)
-	return slices.Contains(matches, len(input))
+	if slices.Contains(matches, len(input)) {
+		return true, nil
+	}
+
+	return false, ctx.error
 }
 
 func (g *Grammar) MatchPrefix(input string) bool {

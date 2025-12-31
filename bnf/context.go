@@ -15,7 +15,16 @@ type memoEntry struct {
 type Context struct {
 	input string
 	memo  map[memoKey]*memoEntry // cache (node, pos)
+
+	// debug
+	FarthestPos int
+	Expected    []string
+	error       *ParseError
+
+	// call stack
+	stack []string
 }
+
 
 func NewContext(input string) *Context {
 	return &Context{
@@ -36,6 +45,7 @@ func (ctx *Context) Match(node Node, pos int) []int {
 	// 1. If already calculared - return cache
 	if entry, ok := ctx.memo[key]; ok {
 		// if still counting -> left recurency
+		// error tracker treats as a failure
 		if entry.inProgress {
 			fmt.Printf("LEFT RECURSION DETECTED: %T %p @ %d\n", node, node, pos)
 			return nil
@@ -54,5 +64,87 @@ func (ctx *Context) Match(node Node, pos int) []int {
 	entry.results = results
 	entry.inProgress = false
 
+	// 5. error tracking
+	// we're looking for the farthest position reached
+	// if pos < farthest, ignore
+	// if pos > farthest, update farthest
+	// if pos == farthest, we stay with first match here (but we could provide all alternatives tried)
+	if len(results) == 0 && pos > ctx.FarthestPos {
+		    line, col := lineCol(ctx.input, ctx.FarthestPos)
+            ctx.error = &ParseError{
+                Pos:       pos,
+                Line:      line, //ctx.line(pos),
+                Column:    col, //ctx.col(pos),
+                RuleStack: ctx.stackSnapshot(),
+                Expected:  node.Expect(),
+                Found:     ctx.foundAt(pos),
+            }
+	}
+
 	return results
+}
+
+func lineCol(input string, pos int) (line, col int) {
+	line = 1
+	col = 1
+	for i, r := range input {
+		if i >= pos {
+			break
+		}
+		if r == '\n' {
+			line++
+			col = 1
+		} else {
+			col++
+		}
+	}
+	return
+}
+
+func (ctx *Context) line(pos int) int {
+	line, _ := lineCol(ctx.input, pos)
+	return line
+}
+
+func (ctx *Context) col(pos int) int {
+	_, col := lineCol(ctx.input, pos)
+	return col
+}
+
+func (ctx *Context) foundAt(pos int) string {
+	if pos >= len(ctx.input) {
+		return "EOF"
+	}
+	r, _ := runeAt(ctx.input, pos)
+	return fmt.Sprintf("%q", r)
+}
+
+func runeAt(s string, pos int) (rune, int) {
+	for i, r := range s {
+		if i == pos {
+			return r, i
+		}
+	}
+	return 0, 0
+}
+
+func (ctx *Context) push(name string) {
+	ctx.stack = append(ctx.stack, name)
+}
+
+func (ctx *Context) pop() {
+	if len(ctx.stack) == 0 {
+		panic("pop on empty context stack")
+	}
+	ctx.stack = ctx.stack[:len(ctx.stack)-1]
+}
+
+func (ctx *Context) stackSnapshot() []string {
+	if len(ctx.stack) == 0 {
+		return nil
+	}
+
+	snap := make([]string, len(ctx.stack))
+	copy(snap, ctx.stack)
+	return snap
 }

@@ -1,5 +1,5 @@
  <postal-address> ::= <name-part> <street-address> <zip-part>
-      <name-part> ::= <personal-part> <last-name> <opt-suffix-part> <EOL> | <personal-part> <name-part>
+      <name-part> ::= <personal-part> <space> <last-name> <space> <opt-suffix-part> <EOL> | <personal-part> <name-part>
   <personal-part> ::= <first-name> | <initial> "."
  <street-address> ::= <house-num> <street-name> <opt-apt-num> <EOL>
        <zip-part> ::= <town-name> "," <state-code> <ZIP-code> <EOL>
@@ -16,4 +16,5 @@
 <town-name> ::= "Springfield" | "Boston"
 <state-code> ::= "MA" | "NY"
 <ZIP-code> ::= "02139" | "10001"
+<space> ::= " "
 <EOL> ::= "\n"

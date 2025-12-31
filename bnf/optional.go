@@ -18,3 +18,7 @@ func (o *Optional) match(ctx *Context, pos int) []int {
 
 	return results
 }
+
+func (o *Optional) Expect() []string {
+    return o.Node.Expect()
+}

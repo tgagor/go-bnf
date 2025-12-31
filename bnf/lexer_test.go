@@ -49,8 +49,9 @@ Term ::= "a"
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			got := g.Match(tt.input)
+			got, err := g.Match(tt.input)
 			assert.Equal(t, tt.want, got)
+			assert.NoError(t, err)
 		})
 	}
 }
@@ -64,10 +65,22 @@ S ::= "a" | "b"
 
 	g := LoadGrammarString(grammarText)
 
-	assert.True(t, g.Match("a"))
-	assert.True(t, g.Match("b"))
-	assert.False(t, g.Match("ab"))
-	assert.False(t, g.Match(""))
+	ok, err := g.Match("a")
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
+	ok, err = g.Match("b")
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
+	ok, err = g.Match("ab")
+	assert.False(t, ok)
+	assert.Error(t, err)
+
+	ok, err = g.Match("")
+	assert.False(t, ok)
+	assert.Error(t, err)
+
 }
 
 func TestBNF_Numbers(t *testing.T) {
@@ -81,12 +94,30 @@ func TestBNF_Numbers(t *testing.T) {
 
 	g := LoadGrammarString(grammarText)
 
-	assert.True(t, g.MatchFrom("number", "0"))   // single zero is fine
-	assert.False(t, g.MatchFrom("number", "01")) // can't start with zero
-	assert.True(t, g.MatchFrom("number", "11"))
-	assert.True(t, g.MatchFrom("number", "111"))
-	assert.True(t, g.MatchFrom("number", "1234567890"))
-	assert.False(t, g.MatchFrom("number", "")) // not a number
+	ok, err := g.MatchFrom("number", "0") // single zero is fine
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
+	ok, err = g.MatchFrom("number", "01") // can't start with zero
+	assert.False(t, ok)
+	assert.Error(t, err)
+
+	ok, err = g.MatchFrom("number", "11")
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
+	ok, err =g.MatchFrom("number", "111")
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
+	ok, err =g.MatchFrom("number", "1234567890")
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
+	ok, err =g.MatchFrom("number", "")
+	assert.False(t, ok) // not a number
+	assert.Error(t, err)
+
 }
 
 func TestLexerNewlines(t *testing.T) {
@@ -168,10 +199,14 @@ func TestPostalAddress(t *testing.T) {
 	}
 
 	for _, s := range ok {
-		assert.True(t, g.MatchFrom("postal-address", s), s)
+		m, err := g.MatchFrom("postal-address", s)
+		assert.True(t, m, s)
+		assert.NoError(t, err)
 	}
 
 	for _, s := range bad {
-		assert.False(t, g.MatchFrom("postal-address", s), s)
+		m, err := g.MatchFrom("postal-address", s)
+		assert.False(t, m, s)
+		assert.Error(t, err)
 	}
 }
