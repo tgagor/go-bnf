@@ -17,7 +17,8 @@ type Context struct {
 	memo  map[memoKey]*memoEntry // cache (node, pos)
 
 	// debug
-	FarthestPos int
+	FarthestPos int // farthest position reached during parsing
+	CurrentPos int // current position during parsing (deepest, even for Sequence, Choice, Repeat)
 	Expected    []string
 	error       *ParseError
 
@@ -35,14 +36,18 @@ func NewContext(input string) *Context {
 
 func (ctx *Context) Match(node Node, pos int) []int {
 	// fmt.Printf("MATCH %T %p @ %d\n", node, node, pos)
-	key := memoKey{node: node, pos: pos}
 
 	// just in case
 	if node == nil {
 		panic("nil node in Context!")
 	}
 
+	if pos > ctx.CurrentPos {
+		ctx.CurrentPos = pos
+	}
+
 	// 1. If already calculared - return cache
+	key := memoKey{node: node, pos: pos}
 	if entry, ok := ctx.memo[key]; ok {
 		// if still counting -> left recurency
 		// error tracker treats as a failure
@@ -69,20 +74,28 @@ func (ctx *Context) Match(node Node, pos int) []int {
 	// if pos < farthest, ignore
 	// if pos > farthest, update farthest
 	// if pos == farthest, we stay with first match here (but we could provide all alternatives tried)
-	if len(results) == 0 && pos > ctx.FarthestPos {
-		    line, col := lineCol(ctx.input, ctx.FarthestPos)
-            ctx.error = &ParseError{
-                Pos:       pos,
-                Line:      line, //ctx.line(pos),
-                Column:    col, //ctx.col(pos),
-                RuleStack: ctx.stackSnapshot(),
-                Expected:  node.Expect(),
-                Found:     ctx.foundAt(pos),
-            }
+	if len(results) == 0 && ctx.CurrentPos > ctx.FarthestPos {
+			ctx.FarthestPos = ctx.CurrentPos
+            ctx.error = ctx.makeError(node)
 	}
 
 	return results
 }
+
+func (ctx *Context) makeError(n Node) *ParseError {
+	line, col := lineCol(ctx.input, ctx.FarthestPos)
+
+	return &ParseError{
+		Pos:       ctx.FarthestPos,
+		Line:      line,
+		Column:    col,
+		RuleStack: ctx.stackSnapshot(),
+		Expected:  n.Expect(),
+		Found:     ctx.foundAt(ctx.FarthestPos),
+	}
+}
+
+
 
 func lineCol(input string, pos int) (line, col int) {
 	line = 1
@@ -127,6 +140,8 @@ func runeAt(s string, pos int) (rune, int) {
 	}
 	return 0, 0
 }
+
+
 
 func (ctx *Context) push(name string) {
 	ctx.stack = append(ctx.stack, name)

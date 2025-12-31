@@ -1,6 +1,9 @@
 package bnf
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type ParseError struct {
 	Pos    int
@@ -11,6 +14,8 @@ type ParseError struct {
 
 	Expected []string
 	Found    string
+
+	Width int // number of characters to highlight
 }
 
 func (err *ParseError) Error() string {
@@ -18,4 +23,50 @@ func (err *ParseError) Error() string {
 		"  Parse error at line %d, col %d\n  While matching rule: %s\n  Expected: %v\n  Found: %s\n",
 		err.Line, err.Column, err.RuleStack, err.Expected, err.Found,
 	)
+}
+
+func (e *ParseError) Pretty(input string) string {
+	var sb strings.Builder
+
+	sb.WriteString(fmt.Sprintf(
+		"Parse error at line %d, column %d, rule %s\n\n",
+		e.Line, e.Column, e.RuleStack,
+	))
+
+	line := extractLine(input, e.Pos)
+	sb.WriteString(line)
+	sb.WriteByte('\n')
+
+	// caret line
+	for i := 1; i < e.Column; i++ {
+		sb.WriteByte(' ')
+	}
+	for i := 0; i < max(1, e.Width); i++ {
+		sb.WriteByte('^')
+	}
+
+	if e.Found != "" {
+		sb.WriteString("\nFound: ")
+		sb.WriteString(e.Found)
+		sb.WriteString(" expected one of: ")
+		sb.WriteString(strings.Join(e.Expected, ", "))
+	}
+
+	return sb.String()
+}
+
+func extractLine(input string, pos int) string {
+	runes := []rune(input)
+
+	start := pos
+	for start > 0 && runes[start-1] != '\n' {
+		start--
+	}
+
+	end := pos
+	for end < len(runes) && runes[end] != '\n' {
+		end++
+	}
+
+	return string(runes[start:end])
 }

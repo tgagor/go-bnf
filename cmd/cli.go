@@ -90,20 +90,20 @@ func (cli *CLI) Run() error {
 		if match {
 			fmt.Println(" -> matched")
 		} else {
-			fmt.Printf("\n%s", err)
+			fmt.Printf("\n%s\n", err.(*bnf.ParseError).Pretty(whole))
 		}
 		return nil
 	}
 
-	examples, err := loadByLine(cli.VerifyFile)
+	lines, err := loadByLine(cli.VerifyFile)
 
-	for _, e := range examples {
-		fmt.Printf("Checking: %s", e)
-		match, err := g.Match(e)
+	for _, l := range lines {
+		fmt.Printf("Checking: %s", l)
+		match, err := g.Match(l)
 		if match {
 			fmt.Println(" -> matched")
 		} else {
-			fmt.Printf("\n%s", err)
+			fmt.Printf("\n%s\n", err.(*bnf.ParseError).Pretty(l))
 		}
 	}
 
