@@ -4,7 +4,7 @@ OUTPUT_DIR ?= bin
 OUTPUT_NAME ?= bnf
 OUTPUT_PATH ?= $(OUTPUT_DIR)/$(OUTPUT_NAME)
 
-bin/bnf: build
+build: bin/bnf
 
 run:
 	go run \
@@ -16,7 +16,7 @@ run:
 		. \
 		-l -g examples/numbers.bnf
 
-build:
+bin/bnf:
 	go build \
 		-ldflags="-w -s -X main.BuildVersion=$(VERSION)" -gcflags=all="-l -B" \
 		-o $(OUTPUT_PATH) .
