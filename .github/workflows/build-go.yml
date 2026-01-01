@@ -72,12 +72,12 @@ jobs:
         set -x
         go version
 
-        OUTPUT_NAME=bnf-${{ matrix.os }}-${{ matrix.arch }}
+        OUTPUT_NAME=bin/bnf-${{ matrix.os }}-${{ matrix.arch }}
         if [ "${{ matrix.os }}" == "windows" ]; then
           OUTPUT_NAME+=".exe"
         fi
         if [ "${{ matrix.os }}" == "darwin" ]; then
-          OUTPUT_NAME=bnf-macos-${{ matrix.arch }}
+          OUTPUT_NAME=bin/bnf-macos-${{ matrix.arch }}
         fi
 
         export OUTPUT_NAME
