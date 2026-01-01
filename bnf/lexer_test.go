@@ -51,7 +51,11 @@ Term ::= "a"
 		t.Run(tt.input, func(t *testing.T) {
 			got, err := g.Match(tt.input)
 			assert.Equal(t, tt.want, got)
-			assert.NoError(t, err)
+			if tt.want {
+				assert.NoError(t, err)
+			} else { // failed match generate error
+				assert.Error(t, err)
+			}
 		})
 	}
 }
@@ -189,7 +193,7 @@ func TestPostalAddress(t *testing.T) {
 	ok := []string{
 		"John Smith\n123 Main St\nSpringfield, MA 02139\n",
 		"J. Doe Jr.\n42 Elm St\nBoston, NY 10001\n",
-		"John A. Jane Smith Sr.\n42 Elm St Apt12\nBoston, MA 10001\n",
+		"John Doe III\n42 Elm St Apt12\nBoston, MA 10001\n",
 	}
 
 	bad := []string{
@@ -199,13 +203,13 @@ func TestPostalAddress(t *testing.T) {
 	}
 
 	for _, s := range ok {
-		m, err := g.MatchFrom("postal-address", s)
+		m, err := g.Match(s)
 		assert.True(t, m, s)
 		assert.NoError(t, err)
 	}
 
 	for _, s := range bad {
-		m, err := g.MatchFrom("postal-address", s)
+		m, err := g.Match(s)
 		assert.False(t, m, s)
 		assert.Error(t, err)
 	}
