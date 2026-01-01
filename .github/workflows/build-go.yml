@@ -45,12 +45,6 @@ jobs:
       with:
         go-version: '1.25'
 
-    # - name: Run vet & lint
-    #   run: |
-    #     go install golang.org/x/lint/golint@latest
-    #     go vet cmd
-    #     golint cmd
-
     - name: Guess next version
       id: guessed_tag_version
       uses: mathieudutour/github-tag-action@v6.2
@@ -95,7 +89,7 @@ jobs:
           ./bin/*
         args: -fq
 
-    - uses: actions/upload-artifact@v5
+    - uses: actions/upload-artifact@v6
       with:
         name: ${{ steps.build.outputs.binary }}
         path: bin/*
@@ -168,16 +162,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest] #, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
             binary: bnf-linux-amd64
 
-          # - os: macos-latest
-          #   binary: bnf-macos-amd64
+          - os: macos-latest
+            binary: bnf-macos-amd64
 
-          # - os: windows-latest
-          #   binary: bnf-windows-amd64.exe
+          - os: windows-latest
+            binary: bnf-windows-amd64.exe
     steps:
       - uses: actions/checkout@v6
         with:
