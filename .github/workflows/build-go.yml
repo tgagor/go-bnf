@@ -15,6 +15,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 defaults:
   run:
     shell: bash
@@ -254,4 +258,3 @@ jobs:
           for asset in bin/*; do
             gh release upload "${{ steps.tag_version.outputs.new_tag }}" "$asset"
           done
-
