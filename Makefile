@@ -1,7 +1,11 @@
 VERSION ?= $(shell git describe --tags --always)
 GOBIN ?= $(shell go env GOPATH)/bin
 OUTPUT_DIR ?= bin
+ifeq ($(OS),Windows_NT)
+OUTPUT_NAME ?= bnf.exe
+else
 OUTPUT_NAME ?= bnf
+endif
 OUTPUT_PATH ?= $(OUTPUT_DIR)/$(OUTPUT_NAME)
 
 build: bin/bnf
