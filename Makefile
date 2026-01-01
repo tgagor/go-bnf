@@ -1,7 +1,8 @@
 VERSION ?= $(shell git describe --tags --always)
 GOBIN ?= $(shell go env GOPATH)/bin
 OUTPUT_DIR ?= bin
-OUTPUT_NAME ?= $(OUTPUT_DIR)/bnf
+OUTPUT_NAME ?= bnf
+OUTPUT_PATH ?= $(OUTPUT_DIR)/$(OUTPUT_NAME)
 
 bin/bnf: build
 
@@ -18,23 +19,23 @@ run:
 build:
 	go build \
 		-ldflags="-w -s -X main.BuildVersion=$(VERSION)" -gcflags=all="-l -B" \
-		-o $(OUTPUT_NAME) .
-	@du -sh $(OUTPUT_NAME)
+		-o $(OUTPUT_PATH) .
+	@du -sh $(OUTPUT_PATH)
 
 test:
 	go test -v ./...
 
 integration-test: bin/bnf
-	./$(OUTPUT_NAME) -l -g examples/numbers.bnf -i examples/numbers.test
-	./$(OUTPUT_NAME) -l -g examples/hour.bnf -i examples/hour.test
-	cat examples/postal1.txt | ./$(OUTPUT_NAME) -g ./examples/postal.bnf
-	cat examples/postal2.txt | ./$(OUTPUT_NAME) -g ./examples/postal.bnf
-	cat examples/postal3.txt | ./$(OUTPUT_NAME) -g ./examples/postal.bnf
-	cat examples/postal4.txt | ./$(OUTPUT_NAME) -g ./examples/postal.bnf
+	./$(OUTPUT_PATH) -l -g examples/numbers.bnf -i examples/numbers.test
+	./$(OUTPUT_PATH) -l -g examples/hour.bnf -i examples/hour.test
+	cat examples/postal1.txt | ./$(OUTPUT_PATH) -g ./examples/postal.bnf
+	cat examples/postal2.txt | ./$(OUTPUT_PATH) -g ./examples/postal.bnf
+	cat examples/postal3.txt | ./$(OUTPUT_PATH) -g ./examples/postal.bnf
+	cat examples/postal4.txt | ./$(OUTPUT_PATH) -g ./examples/postal.bnf
 
 install: bin/bnf
 	@mkdir -p $(GOBIN)
-	@cp $(OUTPUT_NAME) $(GOBIN)/bnf
+	@cp $(OUTPUT_PATH) $(GOBIN)/bnf
 	@echo "Installed bnf to $(GOBIN)/bnf"
 
 $(GOBIN)/goimports:
