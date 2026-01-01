@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"go-bnf/bnf"
+	"io"
 	"os"
 	"strings"
 )
@@ -27,47 +28,33 @@ func New(buildVersion, appName, grammarFile, verifyFile string, lineByLine bool)
 	}
 }
 
-func loadByLine(file string) ([]string, error) {
-	var f *os.File
+func loadFile(file string, lineByLine bool) ([]string, error) {
+	var r io.ReadCloser
 	var err error
-	if file != "" {
-		f, err = os.Open(file)
+	if file == "" { // no file -> read from stdin
+		r, err = io.NopCloser(os.Stdin), nil
+	} else {
+		r, err = os.Open(file)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	if lineByLine {
+		var lines []string
+		scanner := bufio.NewScanner(r)
+		for scanner.Scan() {
+			lines = append(lines, strings.TrimSpace(scanner.Text()))
+		}
+		return lines, scanner.Err()
+	} else {
+		content, err := io.ReadAll(r)
 		if err != nil {
 			return nil, err
 		}
-		defer f.Close()
-	} else {
-		// read from stdin
-		f = os.Stdin
+		return []string{string(content)}, nil
 	}
-
-	var lines []string
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		lines = append(lines, strings.TrimSpace(scanner.Text()))
-	}
-	return lines, scanner.Err()
-}
-
-func loadWhole(file string) ([]string, error) {
-	var f *os.File
-	var err error
-	if file != "" {
-		f, err = os.Open(file)
-		if err != nil {
-			return []string{}, err
-		}
-		defer f.Close()
-	} else {
-		// read from stdin
-		f = os.Stdin
-	}
-
-	content, err := os.ReadFile(f.Name())
-	if err != nil {
-		return []string{}, err
-	}
-	return []string{string(content),}, nil
 }
 
 func (cli *CLI) Run() error {
@@ -79,14 +66,27 @@ func (cli *CLI) Run() error {
 	}
 	fmt.Println("Grammar loaded.")
 
+	if cli.VerifyFile == "" {
+		stat, err := os.Stdin.Stat()
+		if err != nil {
+			return fmt.Errorf("failed to stat stdin: %w", err)
+		}
+		if (stat.Mode() & os.ModeCharDevice) != 0 {
+			return fmt.Errorf("no input provided: use -i <file> or pipe data to stdin")
+		}
+	}
+
 	fmt.Println("Loading input...")
 	var tokens []string
 	if cli.LineByLine {
 		fmt.Println("Checking line by line...")
-		tokens, err = loadByLine(cli.VerifyFile)
+		tokens, err = loadFile(cli.VerifyFile, true)
 	} else {
 		fmt.Println("Checking whole input...")
-		tokens, err = loadWhole(cli.VerifyFile)
+		tokens, err = loadFile(cli.VerifyFile, false)
+	}
+	if err != nil {
+		return err
 	}
 
 	for _, l := range tokens {
