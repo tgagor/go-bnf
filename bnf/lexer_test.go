@@ -110,15 +110,15 @@ func TestBNF_Numbers(t *testing.T) {
 	assert.True(t, ok)
 	assert.NoError(t, err)
 
-	ok, err =g.MatchFrom("number", "111")
+	ok, err = g.MatchFrom("number", "111")
 	assert.True(t, ok)
 	assert.NoError(t, err)
 
-	ok, err =g.MatchFrom("number", "1234567890")
+	ok, err = g.MatchFrom("number", "1234567890")
 	assert.True(t, ok)
 	assert.NoError(t, err)
 
-	ok, err =g.MatchFrom("number", "")
+	ok, err = g.MatchFrom("number", "")
 	assert.False(t, ok) // not a number
 	assert.Error(t, err)
 
@@ -169,6 +169,8 @@ func TestLexer_EmptyString(t *testing.T) {
 }
 
 func TestPostalAddress(t *testing.T) {
+	t.Parallel()
+
 	g, _ := LoadGrammarFile("../examples/postal.bnf")
 
 	ok := []string{
@@ -197,6 +199,8 @@ func TestPostalAddress(t *testing.T) {
 }
 
 func TestCommentAtEOF(t *testing.T) {
+	t.Parallel()
+
 	g := LoadGrammarString(`
 a ::= "a" // eof comment`)
 
@@ -206,6 +210,8 @@ a ::= "a" // eof comment`)
 }
 
 func TestCommentOnlyLine(t *testing.T) {
+	t.Parallel()
+
 	g := LoadGrammarString(`
 # this is a comment
 ; another one
@@ -218,6 +224,8 @@ a ::= "a"
 }
 
 func TestCommentAfterAlternative(t *testing.T) {
+	t.Parallel()
+
 	g := LoadGrammarString(`
 a ::= "a" | "b" // alternative c
 `)
@@ -236,6 +244,8 @@ a ::= "a" | "b" // alternative c
 }
 
 func TestCommentInsideString(t *testing.T) {
+	t.Parallel()
+
 	g := LoadGrammarString(`
 a ::= "//" | "#" | ";"
 `)
@@ -249,6 +259,8 @@ a ::= "//" | "#" | ";"
 }
 
 func TestCommentWithWhitespace(t *testing.T) {
+	t.Parallel()
+
 	g := LoadGrammarString(`
    a ::=   "a"     # comment
            | "b"   // another
