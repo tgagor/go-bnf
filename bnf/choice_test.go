@@ -17,10 +17,10 @@ func TestChoice(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, []int{1, 2}, match(c, "ab", 0)) // matching both
-	assert.Equal(t, []int{1}, match(c, "a", 0))     // matching 1
-	assert.Nil(t, match(c, "ab", 1))                // no match
-	assert.Nil(t, match(c, "b", 0))                 // not matching b
+	assert.Equal(t, []int{1, 2}, testMatch(c, "ab", 0)) // matching both
+	assert.Equal(t, []int{1}, testMatch(c, "a", 0))     // matching 1
+	assert.Nil(t, testMatch(c, "ab", 1))                // no match
+	assert.Nil(t, testMatch(c, "b", 0))                 // not matching b
 }
 
 func TestChoiceDuplicate(t *testing.T) {
@@ -34,9 +34,9 @@ func TestChoiceDuplicate(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, []int{1, 1}, match(c, "ab", 0)) // matching same
-	assert.Equal(t, []int{1, 1}, match(c, "a", 0))  // matching same
-	assert.Nil(t, match(c, "b", 0))                 // not matching b
+	assert.Equal(t, []int{1, 1}, testMatch(c, "ab", 0)) // matching same
+	assert.Equal(t, []int{1, 1}, testMatch(c, "a", 0))  // matching same
+	assert.Nil(t, testMatch(c, "b", 0))                 // not matching b
 }
 
 func TestChoiceMultiPath(t *testing.T) {
@@ -56,11 +56,11 @@ func TestChoiceMultiPath(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, []int{1}, match(c, "ab", 0))      // matches 2
-	assert.Equal(t, []int{1, 2}, match(c, "aab", 0))  // matches 3
-	assert.Equal(t, []int{1, 2}, match(c, "aabc", 0)) // matches only 3
-	assert.Equal(t, []int{1}, match(c, "abc", 0))     // only a matches
-	assert.Equal(t, []int{1}, match(c, "acb", 0))     // only a matches
-	assert.Nil(t, match(c, "cba", 0))                 // only a matches
-	assert.Nil(t, match(c, "", 0))                    // no match
+	assert.Equal(t, []int{1}, testMatch(c, "ab", 0))      // matches 2
+	assert.Equal(t, []int{1, 2}, testMatch(c, "aab", 0))  // matches 3
+	assert.Equal(t, []int{1, 2}, testMatch(c, "aabc", 0)) // matches only 3
+	assert.Equal(t, []int{1}, testMatch(c, "abc", 0))     // only a matches
+	assert.Equal(t, []int{1}, testMatch(c, "acb", 0))     // only a matches
+	assert.Nil(t, testMatch(c, "cba", 0))                 // only a matches
+	assert.Nil(t, testMatch(c, "", 0))                    // no match
 }

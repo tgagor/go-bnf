@@ -1,6 +1,6 @@
 package bnf
 
-func match(node Node, input string, pos int) []int {
+func testMatch(node Node, input string, pos int) []int {
 	ctx := &Context{
 		input: input,
 		memo:  make(map[memoKey]*memoEntry),
