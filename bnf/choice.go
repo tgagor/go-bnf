@@ -4,7 +4,7 @@ type choice struct {
 	Options []Node
 }
 
-func (c *choice) match(ctx *Context, pos int) []int {
+func (c *choice) match(ctx *context, pos int) []int {
 	var results []int
 	for _, opt := range c.Options {
 		results = append(results, ctx.Match(opt, pos)...)

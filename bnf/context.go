@@ -12,13 +12,13 @@ type memoEntry struct {
 	inProgress bool  // detect left sided recurency
 }
 
-type Context struct {
+type context struct {
 	input string
 	memo  map[memoKey]*memoEntry // cache (node, pos)
 
 	// debug
 	FarthestPos int // farthest position reached during parsing
-	CurrentPos int // current position during parsing (deepest, even for Sequence, Choice, Repeat)
+	CurrentPos  int // current position during parsing (deepest, even for Sequence, Choice, Repeat)
 	Expected    []string
 	error       *ParseError
 
@@ -26,15 +26,14 @@ type Context struct {
 	stack []string
 }
 
-
-func NewContext(input string) *Context {
-	return &Context{
+func NewContext(input string) *context {
+	return &context{
 		input: input,
 		memo:  make(map[memoKey]*memoEntry),
 	}
 }
 
-func (ctx *Context) Match(node Node, pos int) []int {
+func (ctx *context) Match(node Node, pos int) []int {
 	// fmt.Printf("MATCH %T %p @ %d\n", node, node, pos)
 
 	// just in case
@@ -77,7 +76,7 @@ func (ctx *Context) Match(node Node, pos int) []int {
 	if len(results) == 0 {
 		if ctx.error == nil || ctx.CurrentPos > ctx.FarthestPos {
 			ctx.FarthestPos = ctx.CurrentPos
-            ctx.error = ctx.makeError(node)
+			ctx.error = ctx.makeError(node)
 		} else if ctx.CurrentPos == ctx.FarthestPos {
 			// merge expected tokens
 			ctx.error.Expected = mergeExpected(ctx.error.Expected, node.Expect())
@@ -87,7 +86,7 @@ func (ctx *Context) Match(node Node, pos int) []int {
 	return results
 }
 
-func (ctx *Context) makeError(n Node) *ParseError {
+func (ctx *context) makeError(n Node) *ParseError {
 	line, col := lineCol(ctx.input, ctx.FarthestPos)
 
 	return &ParseError{
@@ -120,7 +119,6 @@ func mergeExpected(a, b []string) []string {
 	return out
 }
 
-
 func lineCol(input string, pos int) (line, col int) {
 	line = 1
 	col = 1
@@ -138,17 +136,17 @@ func lineCol(input string, pos int) (line, col int) {
 	return
 }
 
-func (ctx *Context) line(pos int) int {
+func (ctx *context) line(pos int) int {
 	line, _ := lineCol(ctx.input, pos)
 	return line
 }
 
-func (ctx *Context) col(pos int) int {
+func (ctx *context) col(pos int) int {
 	_, col := lineCol(ctx.input, pos)
 	return col
 }
 
-func (ctx *Context) foundAt(pos int) string {
+func (ctx *context) foundAt(pos int) string {
 	if pos >= len(ctx.input) {
 		return "EOF"
 	}
@@ -182,20 +180,18 @@ func expectedWidth(expected []string) int {
 	return max
 }
 
-
-
-func (ctx *Context) push(name string) {
+func (ctx *context) push(name string) {
 	ctx.stack = append(ctx.stack, name)
 }
 
-func (ctx *Context) pop() {
+func (ctx *context) pop() {
 	if len(ctx.stack) == 0 {
 		panic("pop on empty context stack")
 	}
 	ctx.stack = ctx.stack[:len(ctx.stack)-1]
 }
 
-func (ctx *Context) stackSnapshot() []string {
+func (ctx *context) stackSnapshot() []string {
 	if len(ctx.stack) == 0 {
 		return nil
 	}

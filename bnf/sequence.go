@@ -4,7 +4,7 @@ type sequence struct {
 	Elements []Node
 }
 
-func (s *sequence) match(ctx *Context, pos int) []int {
+func (s *sequence) match(ctx *context, pos int) []int {
 	positions := []int{pos}
 
 	for _, elem := range s.Elements {

@@ -5,7 +5,7 @@ import (
 )
 
 type Node interface {
-	match(ctx *Context, pos int) []int
+	match(ctx *context, pos int) []int
 	Expect() []string // for error reporting, node types expected at this point
 }
 

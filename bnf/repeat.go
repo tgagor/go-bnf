@@ -7,7 +7,7 @@ type repeat struct {
 	Min  int // 0=*, 1=+
 }
 
-func (r *repeat) match(ctx *Context, pos int) []int {
+func (r *repeat) match(ctx *context, pos int) []int {
 	current := []int{pos}
 	var results []int
 
