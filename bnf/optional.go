@@ -1,7 +1,7 @@
 package bnf
 
 type optional struct {
-	Node Node
+	Node node
 }
 
 func (o *optional) match(ctx *context, pos int) []int {

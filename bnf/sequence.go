@@ -1,7 +1,7 @@
 package bnf
 
 type sequence struct {
-	Elements []Node
+	Elements []node
 }
 
 func (s *sequence) match(ctx *context, pos int) []int {

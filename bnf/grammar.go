@@ -4,14 +4,14 @@ import (
 	"slices"
 )
 
-type Node interface {
+type node interface {
 	match(ctx *context, pos int) []int
 	Expect() []string // for error reporting, node types expected at this point
 }
 
 type Rule struct {
 	Name string
-	Expr Node
+	Expr node
 }
 
 type Grammar struct {
@@ -27,7 +27,7 @@ func (g *Grammar) Resolve() error {
 	return nil
 }
 
-func resolveNode(n Node, rules map[string]*Rule) {
+func resolveNode(n node, rules map[string]*Rule) {
 	switch t := n.(type) {
 	case *nonTerminal:
 		t.Rule = rules[t.Name]

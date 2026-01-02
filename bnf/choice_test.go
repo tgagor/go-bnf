@@ -11,7 +11,7 @@ func TestChoice(t *testing.T) {
 
 	// A ::= "a" | "ab"
 	c := &choice{
-		Options: []Node{
+		Options: []node{
 			&terminal{"a"},
 			&terminal{"ab"},
 		},
@@ -28,7 +28,7 @@ func TestChoiceDuplicate(t *testing.T) {
 
 	// A ::= "a" | "a"
 	c := &choice{
-		Options: []Node{
+		Options: []node{
 			&terminal{"a"},
 			&terminal{"a"},
 		},
@@ -44,13 +44,13 @@ func TestChoiceMultiPath(t *testing.T) {
 
 	// A ::= ("a" | "aa") | "b"
 	inner := &choice{
-		Options: []Node{
+		Options: []node{
 			&terminal{"a"},
 			&terminal{"aa"},
 		},
 	}
 	c := &choice{
-		Options: []Node{
+		Options: []node{
 			inner,
 			&terminal{"b"},
 		},

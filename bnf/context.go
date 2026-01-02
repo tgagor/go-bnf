@@ -3,7 +3,7 @@ package bnf
 import "fmt"
 
 type memoKey struct {
-	node Node
+	node node
 	pos  int
 }
 
@@ -33,7 +33,7 @@ func NewContext(input string) *context {
 	}
 }
 
-func (ctx *context) Match(node Node, pos int) []int {
+func (ctx *context) Match(node node, pos int) []int {
 	// fmt.Printf("MATCH %T %p @ %d\n", node, node, pos)
 
 	// just in case
@@ -86,7 +86,7 @@ func (ctx *context) Match(node Node, pos int) []int {
 	return results
 }
 
-func (ctx *context) makeError(n Node) *ParseError {
+func (ctx *context) makeError(n node) *ParseError {
 	line, col := lineCol(ctx.input, ctx.FarthestPos)
 
 	return &ParseError{

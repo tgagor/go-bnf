@@ -19,7 +19,7 @@ func TestOptionalTerminal(t *testing.T) {
 func TestOptionalSequence(t *testing.T) {
 	// "a"? "b"
 	seq := &sequence{
-		Elements: []Node{
+		Elements: []node{
 			&optional{Node: &terminal{Value: "a"}},
 			&terminal{Value: "b"},
 		},
