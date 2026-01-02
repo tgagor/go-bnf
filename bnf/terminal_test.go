@@ -11,8 +11,8 @@ func TestTerminal(t *testing.T) {
 		Value: "abc",
 	}
 
-	assert.Equal(t, []int{3}, match(n, "abcdef", 0)) // matching 3
-	assert.Nil(t, match(n, "abcdef", 1))             // not matching
-	assert.Nil(t, match(n, "ab", 0))                 // not matching
-	assert.Nil(t, match(n, "", 0))                   // not matching
+	assert.Equal(t, []int{3}, testMatch(n, "abcdef", 0)) // matching 3
+	assert.Nil(t, testMatch(n, "abcdef", 1))             // not matching
+	assert.Nil(t, testMatch(n, "ab", 0))                 // not matching
+	assert.Nil(t, testMatch(n, "", 0))                   // not matching
 }

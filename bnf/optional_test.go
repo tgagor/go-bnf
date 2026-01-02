@@ -12,8 +12,8 @@ func TestOptionalTerminal(t *testing.T) {
 		Node: &Terminal{Value: "a"},
 	}
 
-	assert.Equal(t, []int{0, 1}, match(g, "a", 0))
-	assert.Equal(t, []int{0}, match(g, "", 0))
+	assert.Equal(t, []int{0, 1}, testMatch(g, "a", 0))
+	assert.Equal(t, []int{0}, testMatch(g, "", 0))
 }
 
 func TestOptionalSequence(t *testing.T) {
@@ -25,9 +25,9 @@ func TestOptionalSequence(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, []int{2}, match(seq, "ab", 0)) // matched optional "a" and "b"
-	assert.Equal(t, []int{1}, match(seq, "b", 0))  // skipped optional "a", matched "b"
-	assert.Nil(t, match(seq, "a", 0))              // no "b" to match
+	assert.Equal(t, []int{2}, testMatch(seq, "ab", 0)) // matched optional "a" and "b"
+	assert.Equal(t, []int{1}, testMatch(seq, "b", 0))  // skipped optional "a", matched "b"
+	assert.Nil(t, testMatch(seq, "a", 0))              // no "b" to match
 }
 
 func TestOptionalPlus_Terminal(t *testing.T) {

@@ -208,5 +208,5 @@ func TestRepeatAlone(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, []int{1, 3, 5}, match(expr, "a+a+a", 0))
+	assert.Equal(t, []int{1, 3, 5}, testMatch(expr, "a+a+a", 0))
 }

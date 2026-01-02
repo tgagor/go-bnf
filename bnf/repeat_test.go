@@ -21,9 +21,9 @@ func TestRepeatStar(t *testing.T) {
 	// 	i=2 -> [2]
 	// 	i=3 -> [3]
 	// 	no further change -> stop
-	assert.Equal(t, []int{0, 1, 2, 3}, match(r, "aaa", 0)) // matches
-	assert.Equal(t, []int{0, 1}, match(r, "abc", 0))       // 0 for optional, but then 1 for actual match
-	assert.Equal(t, []int{0}, match(r, "", 0))             // 0 for optional
+	assert.Equal(t, []int{0, 1, 2, 3}, testMatch(r, "aaa", 0)) // matches
+	assert.Equal(t, []int{0, 1}, testMatch(r, "abc", 0))       // 0 for optional, but then 1 for actual match
+	assert.Equal(t, []int{0}, testMatch(r, "", 0))             // 0 for optional
 }
 
 func TestRepeatStarComplex(t *testing.T) {
@@ -47,9 +47,9 @@ func TestRepeatStarComplex(t *testing.T) {
 	// a 		-> 1
 	// aa 		-> 2
 	// duplicates are fine
-	assert.Equal(t, []int{0, 1, 2, 2, 3, 3, 3}, match(r, "aaa", 0)) // matches
-	assert.Equal(t, []int{0, 1}, match(r, "a", 0))                  // 0 for optional, but then 1 for actual match
-	assert.Equal(t, []int{0}, match(r, "", 0))                      // 0 for optional
+	assert.Equal(t, []int{0, 1, 2, 2, 3, 3, 3}, testMatch(r, "aaa", 0)) // matches
+	assert.Equal(t, []int{0, 1}, testMatch(r, "a", 0))                  // 0 for optional, but then 1 for actual match
+	assert.Equal(t, []int{0}, testMatch(r, "", 0))                      // 0 for optional
 }
 
 func TestRepeatPlus(t *testing.T) {
@@ -67,7 +67,7 @@ func TestRepeatPlus(t *testing.T) {
 	// 	i=2 -> [2]
 	// 	i=3 -> [3]
 	// 	no further change -> stop
-	assert.Equal(t, []int{1, 2, 3}, match(r, "aaa", 0)) // it stops at 2nd char (no match)
-	assert.Equal(t, []int{1}, match(r, "abc", 0))       // it stops at 2nd char (no match)
-	assert.Nil(t, match(r, "", 0))                      // it stops at 2nd char (no match)
+	assert.Equal(t, []int{1, 2, 3}, testMatch(r, "aaa", 0)) // it stops at 2nd char (no match)
+	assert.Equal(t, []int{1}, testMatch(r, "abc", 0))       // it stops at 2nd char (no match)
+	assert.Nil(t, testMatch(r, "", 0))                      // it stops at 2nd char (no match)
 }
