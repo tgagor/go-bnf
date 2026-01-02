@@ -2,12 +2,12 @@ package bnf
 
 // A*  -> 0 or more repeats of A
 // A+  -> 1 or more repeats of A
-type Repeat struct {
+type repeat struct {
 	Node Node
 	Min  int // 0=*, 1=+
 }
 
-func (r *Repeat) match(ctx *Context, pos int) []int {
+func (r *repeat) match(ctx *Context, pos int) []int {
 	current := []int{pos}
 	var results []int
 
@@ -34,6 +34,6 @@ func (r *Repeat) match(ctx *Context, pos int) []int {
 	return results
 }
 
-func (r *Repeat) Expect() []string {
-    return r.Node.Expect()
+func (r *repeat) Expect() []string {
+	return r.Node.Expect()
 }

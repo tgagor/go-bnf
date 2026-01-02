@@ -14,13 +14,13 @@ func buildSimpleGrammar() *Grammar {
 		Rules: map[string]*Rule{
 			"S": {
 				Name: "S",
-				Expr: &Sequence{
+				Expr: &sequence{
 					Elements: []Node{
-						&Repeat{
-							Node: &Terminal{"a"},
+						&repeat{
+							Node: &terminal{"a"},
 							Min:  0,
 						},
-						&Terminal{"b"},
+						&terminal{"b"},
 					},
 				},
 			},
@@ -72,18 +72,18 @@ func buildComplexGrammar() *Grammar {
 	term := &Rule{Name: "Term"}
 
 	// Term ::= "a"
-	term.Expr = &Terminal{Value: "a"}
+	term.Expr = &terminal{Value: "a"}
 	// exprNT := &NonTerminal{Name: "Expr", Rule: expr}
-	termNT := &NonTerminal{Name: "Term", Rule: term}
+	termNT := &nonTerminal{Name: "Term", Rule: term}
 
 	// Expr ::= Term ("+" Term)*
-	expr.Expr = &Sequence{
+	expr.Expr = &sequence{
 		Elements: []Node{
 			termNT,
-			&Repeat{
-				Node: &Sequence{
+			&repeat{
+				Node: &sequence{
 					Elements: []Node{
-						&Terminal{Value: "+"},
+						&terminal{Value: "+"},
 						termNT,
 					},
 				},
@@ -137,19 +137,19 @@ func buildLeftRecursiveGrammar() *Grammar {
 	expr := &Rule{Name: "Expr"}
 	term := &Rule{Name: "Term"}
 
-	exprNT := &NonTerminal{Name: "Expr", Rule: expr}
-	termNT := &NonTerminal{Name: "Term", Rule: term}
+	exprNT := &nonTerminal{Name: "Expr", Rule: expr}
+	termNT := &nonTerminal{Name: "Term", Rule: term}
 
 	// Term ::= "a"
-	term.Expr = &Terminal{Value: "a"}
+	term.Expr = &terminal{Value: "a"}
 
 	// Expr ::= Expr "+" Term | Term
-	expr.Expr = &Choice{
+	expr.Expr = &choice{
 		Options: []Node{
-			&Sequence{
+			&sequence{
 				Elements: []Node{
 					exprNT,
-					&Terminal{Value: "+"},
+					&terminal{Value: "+"},
 					termNT,
 				},
 			},
@@ -191,15 +191,15 @@ func TestRecursiveGrammar(t *testing.T) {
 }
 
 func TestRepeatAlone(t *testing.T) {
-	term := &Terminal{Value: "a"}
+	term := &terminal{Value: "a"}
 
-	expr := &Sequence{
+	expr := &sequence{
 		Elements: []Node{
 			term,
-			&Repeat{
-				Node: &Sequence{
+			&repeat{
+				Node: &sequence{
 					Elements: []Node{
-						&Terminal{Value: "+"},
+						&terminal{Value: "+"},
 						term,
 					},
 				},

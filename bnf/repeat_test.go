@@ -10,8 +10,8 @@ func TestRepeatStar(t *testing.T) {
 	t.Parallel()
 
 	// A ::= "a"*
-	r := &Repeat{
-		Node: &Terminal{"a"},
+	r := &repeat{
+		Node: &terminal{"a"},
 		Min:  0,
 	}
 
@@ -30,11 +30,11 @@ func TestRepeatStarComplex(t *testing.T) {
 	t.Parallel()
 
 	// A ::= ("a" | "aa")*
-	r := &Repeat{
-		Node: &Choice{
+	r := &repeat{
+		Node: &choice{
 			Options: []Node{
-				&Terminal{"a"},
-				&Terminal{"aa"},
+				&terminal{"a"},
+				&terminal{"aa"},
 			},
 		},
 		Min: 0,
@@ -56,8 +56,8 @@ func TestRepeatPlus(t *testing.T) {
 	t.Parallel()
 
 	// A ::= "a"+
-	r := &Repeat{
-		Node: &Terminal{"a"},
+	r := &repeat{
+		Node: &terminal{"a"},
 		Min:  1,
 	}
 

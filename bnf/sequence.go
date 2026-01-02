@@ -1,10 +1,10 @@
 package bnf
 
-type Sequence struct {
+type sequence struct {
 	Elements []Node
 }
 
-func (s *Sequence) match(ctx *Context, pos int) []int {
+func (s *sequence) match(ctx *Context, pos int) []int {
 	positions := []int{pos}
 
 	for _, elem := range s.Elements {
@@ -21,9 +21,9 @@ func (s *Sequence) match(ctx *Context, pos int) []int {
 	return positions
 }
 
-func (s *Sequence) Expect() []string {
-    if len(s.Elements) == 0 {
-        return nil
-    }
-    return s.Elements[0].Expect()
+func (s *sequence) Expect() []string {
+	if len(s.Elements) == 0 {
+		return nil
+	}
+	return s.Elements[0].Expect()
 }

@@ -8,8 +8,8 @@ import (
 )
 
 func TestOptionalTerminal(t *testing.T) {
-	g := &Optional{
-		Node: &Terminal{Value: "a"},
+	g := &optional{
+		Node: &terminal{Value: "a"},
 	}
 
 	assert.Equal(t, []int{0, 1}, testMatch(g, "a", 0))
@@ -18,10 +18,10 @@ func TestOptionalTerminal(t *testing.T) {
 
 func TestOptionalSequence(t *testing.T) {
 	// "a"? "b"
-	seq := &Sequence{
+	seq := &sequence{
 		Elements: []Node{
-			&Optional{Node: &Terminal{Value: "a"}},
-			&Terminal{Value: "b"},
+			&optional{Node: &terminal{Value: "a"}},
+			&terminal{Value: "b"},
 		},
 	}
 
@@ -33,9 +33,9 @@ func TestOptionalSequence(t *testing.T) {
 func TestOptionalPlus_Terminal(t *testing.T) {
 	// a?+ should work as (a?)+
 	// not as a(+?)
-	node := &Repeat{
-		Node: &Optional{
-			Node: &Terminal{Value: "a"},
+	node := &repeat{
+		Node: &optional{
+			Node: &terminal{Value: "a"},
 		},
 		Min: 1,
 	}

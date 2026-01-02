@@ -7,7 +7,7 @@ import (
 )
 
 func TestTerminal(t *testing.T) {
-	n := &Terminal{
+	n := &terminal{
 		Value: "abc",
 	}
 
