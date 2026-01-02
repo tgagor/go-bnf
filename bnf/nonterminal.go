@@ -5,7 +5,7 @@ type nonTerminal struct {
 	Rule *Rule // will be set up in 2nd pass
 }
 
-func (n *nonTerminal) match(ctx *Context, pos int) []int {
+func (n *nonTerminal) match(ctx *context, pos int) []int {
 	if n.Rule == nil {
 		panic("NonTerminal without Rule: " + n.Name)
 	}

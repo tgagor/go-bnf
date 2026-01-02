@@ -4,7 +4,7 @@ type optional struct {
 	Node Node
 }
 
-func (o *optional) match(ctx *Context, pos int) []int {
+func (o *optional) match(ctx *context, pos int) []int {
 	// we can always match nothing
 	results := []int{pos}
 

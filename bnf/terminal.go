@@ -6,7 +6,7 @@ type terminal struct {
 	Value string
 }
 
-func (t *terminal) match(ctx *Context, pos int) []int {
+func (t *terminal) match(ctx *context, pos int) []int {
 	if pos+len(t.Value) > len(ctx.input) {
 		return nil
 	}
