@@ -214,3 +214,26 @@ func TestPostalAddress(t *testing.T) {
 		assert.Error(t, err)
 	}
 }
+
+func TestComments(t *testing.T) {
+	t.Parallel()
+
+	g := LoadGrammarString(`
+	a ::= "a" | "b " | "c" // not important
+	b ::= "b" ; also not important
+	# unreachable ::= "we" | "will" | "see"
+	c ::= "important"
+`)
+
+	m, err := g.Match("a")
+	assert.True(t, m)
+	assert.NoError(t, err)
+
+	m, err = g.MatchFrom("b", "also")
+	assert.False(t, m)
+	assert.Error(t, err)
+
+	m, err = g.MatchFrom("c", "important")
+	assert.True(t, m)
+	assert.NoError(t, err)
+}

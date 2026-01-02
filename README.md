@@ -76,3 +76,8 @@ The core design separates **Grammar Parsing** from **Text Matching**:
     }
     ```
     Returning a list of possible end positions allows for backtracking and handling ambiguity.
+
+## To Do
+
+[ ] - Add comments support
+[ ] - Provide BNF grammar of my parser

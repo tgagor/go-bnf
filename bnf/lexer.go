@@ -43,10 +43,29 @@ func (l *Lexer) Next() Token {
 		if err == io.EOF {
 			return Token{Type: EOF}
 		}
-		if !isWhitespace(ch) {
-			l.r.UnreadRune()
-			break
+
+		if isWhitespace(ch) {
+			continue
 		}
+
+		// line comment
+		if ch == ';' || ch == '#' {
+			l.skipUntilEOL()
+			continue
+		}
+
+		if ch == '/' {
+			next, _, err := l.r.ReadRune()
+			if err == nil && next == '/' {
+				l.skipUntilEOL()
+				continue
+			}
+			l.r.UnreadRune()
+		}
+
+		// ch is meaningful
+		l.r.UnreadRune()
+		break
 	}
 
 	ch, _, err := l.r.ReadRune()
@@ -207,4 +226,27 @@ func isIdentStart(ch rune) bool {
 
 func isIdentPart(ch rune) bool {
 	return isIdentStart(ch) || (ch >= '0' && ch <= '9') || ch == '-'
+}
+
+func (l *Lexer) skipUntilEOL() error {
+	for {
+		ch, _, err := l.r.ReadRune()
+		if err != nil {
+			return err
+		}
+
+		// Linux new line
+		if ch == '\n' {
+			return nil
+		}
+		// Windows, or old Mac style new line
+		if ch == '\r' {
+			// check if it's not \r\n
+			next, _, err := l.r.ReadRune()
+			if err == nil && next != '\n' {
+				l.r.UnreadRune()
+			}
+			return nil
+		}
+	}
 }

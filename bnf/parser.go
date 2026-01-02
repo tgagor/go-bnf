@@ -58,21 +58,6 @@ func (p *Parser) parseRule() *RuleAST {
 	return &RuleAST{Name: name, Expr: expr}
 }
 
-// func (p *Parser) parseExpr() ExprAST {
-// 	left := p.parseSeq()
-// 	options := []ExprAST{left}
-
-// 	for p.look.Type == PIPE {
-// 		p.eat(PIPE)
-// 		options = append(options, p.parseSeq())
-// 	}
-
-// 	if len(options) == 1 {
-// 		return left
-// 	}
-// 	return &ChoiceAST{Options: options}
-// }
-
 func (p *Parser) parseExpr() ExprAST {
 	p.skipNewlines()
 
@@ -103,20 +88,6 @@ func (p *Parser) parseExpr() ExprAST {
 	}
 	return &ChoiceAST{Options: options}
 }
-
-// func (p *Parser) parseSeq() ExprAST {
-// 	var elems []ExprAST
-// 	// if no match, then next token does not belong to the sequence
-// 	// so we stop parsing the sequence
-// 	for p.look.Type == IDENT || p.look.Type == STRING || p.look.Type == LPAREN {
-// 		elems = append(elems, p.parseFactor())
-// 	}
-
-// 	if len(elems) == 1 {
-// 		return elems[0]
-// 	}
-// 	return &SeqAST{Elements: elems}
-// }
 
 func (p *Parser) parseSeq() ExprAST {
 	var elems []ExprAST
