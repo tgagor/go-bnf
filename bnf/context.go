@@ -1,6 +1,9 @@
 package bnf
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 type memoKey struct {
 	node node
@@ -8,8 +11,8 @@ type memoKey struct {
 }
 
 type memoEntry struct {
-	results    []int // remember results`
-	inProgress bool  // detect left sided recurency
+	results         []int // remember results`
+	isLeftRecursive bool  // detect left sided recurency
 }
 
 type context struct {
@@ -48,32 +51,44 @@ func (ctx *context) Match(node node, pos int) []int {
 	// 1. If already calculared - return cache
 	key := memoKey{node: node, pos: pos}
 	if entry, ok := ctx.memo[key]; ok {
-		// if still counting -> left recurency
-		// error tracker treats as a failure
-		if entry.inProgress {
-			fmt.Printf("LEFT RECURSION DETECTED: %T %p @ %d\n", node, node, pos)
-			return nil
+		if entry.isLeftRecursive {
+			// This is the crucial part for handling left recursion.
+			// We've been here before in a recursive call.
+			// We return the "seed" result but mark that the rule needs re-evaluation.
+			return entry.results
 		}
 		return entry.results
 	}
 
-	// 2. save calculations
-	entry := &memoEntry{inProgress: true}
+
+    // 2. Set up for potential left recursion.
+    //    Assume failure (the "seed" result) and mark it as left-recursive.
+	entry := &memoEntry{isLeftRecursive: true, results: nil}
 	ctx.memo[key] = entry
 
-	// 3. calculate result (delegate to node)
-	results := node.match(ctx, pos)
+    // 2. Try to parse with the seed.
+	//	  This may recursively call back into this same function.
+    // 2. Try to parse with the seed.
+    var lastResults []int
+    currentResults := node.match(ctx, pos)
 
-	// 4. save result
-	entry.results = results
-	entry.inProgress = false
+    // 3. "Grow" the result. Keep parsing as long as the match gets longer.
+    for !slices.Equal(currentResults, lastResults) {
+        lastResults = currentResults
+        // Important: Update the cache with the better result BEFORE re-evaluating.
+        ctx.memo[key] = &memoEntry{isLeftRecursive: true, results: lastResults}
+        currentResults = node.match(ctx, pos)
+    }
+
+    // 4. Finalize the result. Mark that we are done with this rule.
+    ctx.memo[key] = &memoEntry{isLeftRecursive: false, results: currentResults}
 
 	// 5. error tracking
 	// we're looking for the farthest position reached
 	// if pos < farthest, ignore
 	// if pos > farthest, update farthest
 	// if pos == farthest, merge expected tokens, to list them all
-	if len(results) == 0 {
+	if len(currentResults) == 0 {
 		if ctx.error == nil || ctx.CurrentPos > ctx.FarthestPos {
 			ctx.FarthestPos = ctx.CurrentPos
 			ctx.error = ctx.makeError(node)
@@ -83,7 +98,7 @@ func (ctx *context) Match(node node, pos int) []int {
 		}
 	}
 
-	return results
+	return currentResults
 }
 
 func (ctx *context) makeError(n node) *ParseError {
