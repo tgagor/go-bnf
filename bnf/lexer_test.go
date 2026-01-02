@@ -196,25 +196,69 @@ func TestPostalAddress(t *testing.T) {
 	}
 }
 
-func TestComments(t *testing.T) {
-	t.Parallel()
-
+func TestCommentAtEOF(t *testing.T) {
 	g := LoadGrammarString(`
-	a ::= "a" | "b " | "c" // not important
-	b ::= "b" ; also not important
-	# unreachable ::= "we" | "will" | "see"
-	c ::= "important"
+a ::= "a" // eof comment`)
+
+	m, err := g.Match("a")
+	assert.True(t, m)
+	assert.NoError(t, err)
+}
+
+func TestCommentOnlyLine(t *testing.T) {
+	g := LoadGrammarString(`
+# this is a comment
+; another one
+a ::= "a"
+`)
+
+	m, err := g.Match("a")
+	assert.True(t, m)
+	assert.NoError(t, err)
+}
+
+func TestCommentAfterAlternative(t *testing.T) {
+	g := LoadGrammarString(`
+a ::= "a" | "b" // alternative c
 `)
 
 	m, err := g.Match("a")
 	assert.True(t, m)
 	assert.NoError(t, err)
 
-	m, err = g.MatchFrom("b", "also")
-	assert.False(t, m)
-	assert.Error(t, err)
-
-	m, err = g.MatchFrom("c", "important")
+	m, err = g.Match("b")
 	assert.True(t, m)
 	assert.NoError(t, err)
+
+	m, err = g.Match("c")
+	assert.False(t, m)
+	assert.Error(t, err)
+}
+
+func TestCommentInsideString(t *testing.T) {
+	g := LoadGrammarString(`
+a ::= "//" | "#" | ";"
+`)
+
+	for _, c := range []string{"//", "#", ";"} {
+		m, err := g.Match(c)
+		assert.True(t, m)
+		assert.NoError(t, err)
+
+	}
+}
+
+func TestCommentWithWhitespace(t *testing.T) {
+	g := LoadGrammarString(`
+   a ::=   "a"     # comment
+           | "b"   // another
+           | "c"
+`)
+
+	for _, c := range []string{"a", "b", "c"} {
+		m, err := g.Match(c)
+		assert.True(t, m)
+		assert.NoError(t, err)
+
+	}
 }
