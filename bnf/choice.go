@@ -1,10 +1,10 @@
 package bnf
 
-type Choice struct {
+type choice struct {
 	Options []Node
 }
 
-func (c *Choice) match(ctx *Context, pos int) []int {
+func (c *choice) match(ctx *Context, pos int) []int {
 	var results []int
 	for _, opt := range c.Options {
 		results = append(results, ctx.Match(opt, pos)...)
@@ -12,10 +12,10 @@ func (c *Choice) match(ctx *Context, pos int) []int {
 	return results
 }
 
-func (c *Choice) Expect() []string {
-    var out []string
-    for _, o := range c.Options {
-        out = append(out, o.Expect()...)
-    }
-    return out
+func (c *choice) Expect() []string {
+	var out []string
+	for _, o := range c.Options {
+		out = append(out, o.Expect()...)
+	}
+	return out
 }

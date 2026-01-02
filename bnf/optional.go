@@ -1,10 +1,10 @@
 package bnf
 
-type Optional struct {
+type optional struct {
 	Node Node
 }
 
-func (o *Optional) match(ctx *Context, pos int) []int {
+func (o *optional) match(ctx *Context, pos int) []int {
 	// we can always match nothing
 	results := []int{pos}
 
@@ -19,6 +19,6 @@ func (o *Optional) match(ctx *Context, pos int) []int {
 	return results
 }
 
-func (o *Optional) Expect() []string {
-    return o.Node.Expect()
+func (o *optional) Expect() []string {
+	return o.Node.Expect()
 }

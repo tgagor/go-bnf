@@ -29,17 +29,17 @@ func (g *Grammar) Resolve() error {
 
 func resolveNode(n Node, rules map[string]*Rule) {
 	switch t := n.(type) {
-	case *NonTerminal:
+	case *nonTerminal:
 		t.Rule = rules[t.Name]
-	case *Sequence:
+	case *sequence:
 		for _, e := range t.Elements {
 			resolveNode(e, rules)
 		}
-	case *Choice:
+	case *choice:
 		for _, o := range t.Options {
 			resolveNode(o, rules)
 		}
-	case *Repeat:
+	case *repeat:
 		resolveNode(t.Node, rules)
 		// case *Optional:
 		// 	resolveNode(t.Node, rules)
@@ -57,7 +57,7 @@ func (g *Grammar) Match(input string) (bool, error) {
 	return g.MatchFrom(g.Start, input)
 }
 
-func (g *Grammar) MatchFrom(start string, input string) (bool, error)  {
+func (g *Grammar) MatchFrom(start string, input string) (bool, error) {
 	rule, ok := g.Rules[start]
 	if !ok {
 		panic("unknown start rule: " + start)

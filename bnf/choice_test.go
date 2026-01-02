@@ -10,10 +10,10 @@ func TestChoice(t *testing.T) {
 	t.Parallel()
 
 	// A ::= "a" | "ab"
-	c := &Choice{
+	c := &choice{
 		Options: []Node{
-			&Terminal{"a"},
-			&Terminal{"ab"},
+			&terminal{"a"},
+			&terminal{"ab"},
 		},
 	}
 
@@ -27,10 +27,10 @@ func TestChoiceDuplicate(t *testing.T) {
 	t.Parallel()
 
 	// A ::= "a" | "a"
-	c := &Choice{
+	c := &choice{
 		Options: []Node{
-			&Terminal{"a"},
-			&Terminal{"a"},
+			&terminal{"a"},
+			&terminal{"a"},
 		},
 	}
 
@@ -43,16 +43,16 @@ func TestChoiceMultiPath(t *testing.T) {
 	t.Parallel()
 
 	// A ::= ("a" | "aa") | "b"
-	inner := &Choice{
+	inner := &choice{
 		Options: []Node{
-			&Terminal{"a"},
-			&Terminal{"aa"},
+			&terminal{"a"},
+			&terminal{"aa"},
 		},
 	}
-	c := &Choice{
+	c := &choice{
 		Options: []Node{
 			inner,
-			&Terminal{"b"},
+			&terminal{"b"},
 		},
 	}
 

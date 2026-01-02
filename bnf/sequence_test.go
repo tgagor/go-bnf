@@ -9,11 +9,11 @@ import (
 func TestSequence(t *testing.T) {
 	t.Parallel()
 
-	seq := &Sequence{
+	seq := &sequence{
 		Elements: []Node{
-			&Terminal{"a"},
-			&Terminal{"b"},
-			&Terminal{"c"},
+			&terminal{"a"},
+			&terminal{"b"},
+			&terminal{"c"},
 		},
 	}
 
@@ -26,16 +26,16 @@ func TestSequenceMultiPath(t *testing.T) {
 	t.Parallel()
 
 	// A ::= ("a" | "aa") "b"
-	choice := &Choice{
+	choice := &choice{
 		Options: []Node{
-			&Terminal{"a"},
-			&Terminal{"aa"},
+			&terminal{"a"},
+			&terminal{"aa"},
 		},
 	}
-	seq := &Sequence{
+	seq := &sequence{
 		Elements: []Node{
 			choice,
-			&Terminal{"b"},
+			&terminal{"b"},
 		},
 	}
 

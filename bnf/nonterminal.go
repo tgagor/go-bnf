@@ -1,11 +1,11 @@
 package bnf
 
-type NonTerminal struct {
+type nonTerminal struct {
 	Name string
 	Rule *Rule // will be set up in 2nd pass
 }
 
-func (n *NonTerminal) match(ctx *Context, pos int) []int {
+func (n *nonTerminal) match(ctx *Context, pos int) []int {
 	if n.Rule == nil {
 		panic("NonTerminal without Rule: " + n.Name)
 	}
@@ -19,6 +19,6 @@ func (n *NonTerminal) match(ctx *Context, pos int) []int {
 	return ctx.Match(n.Rule.Expr, pos)
 }
 
-func (n *NonTerminal) Expect() []string {
-    return []string{n.Name}
+func (n *nonTerminal) Expect() []string {
+	return []string{n.Name}
 }
