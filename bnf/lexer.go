@@ -20,7 +20,6 @@ const (
 	QMARK              // ?
 	LPAREN             // (
 	RPAREN             // )
-	NEWLINE
 )
 
 type Token struct {
@@ -181,20 +180,6 @@ func (l *Lexer) Next() Token {
 		panic("expected ::=")
 	}
 
-	// 4.5 NEWLINE end of line
-	if ch == '\n' {
-		return Token{Type: NEWLINE, Text: "\n"}
-	}
-	// 4.6 Windows, or old Mac style new line
-	if ch == '\r' {
-		// check if it's not \r\n
-		next, _, err := l.r.ReadRune()
-		if err == nil && next != '\n' {
-			l.r.UnreadRune()
-		}
-		return Token{Type: NEWLINE, Text: "\n"}
-	}
-
 	// 5. pojedyncze symbole
 	switch ch {
 	case '|':
@@ -215,7 +200,7 @@ func (l *Lexer) Next() Token {
 }
 
 func isWhitespace(ch rune) bool {
-	return ch == ' ' || ch == '\t'
+	return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'
 }
 
 func isIdentStart(ch rune) bool {

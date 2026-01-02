@@ -124,25 +124,6 @@ func TestBNF_Numbers(t *testing.T) {
 
 }
 
-func TestLexerNewlines(t *testing.T) {
-	// All styles of new lines: Unix (\n), Windows (\r\n), old Mac (\r)
-	input := "A ::= \"a\"\r\nB ::= \"b\"\rC ::= \"c\"\nD ::= \"d\""
-	lx := NewLexer(strings.NewReader(input))
-
-	var count int
-	for {
-		tok := lx.Next()
-		if tok.Type == NEWLINE {
-			count++
-		}
-		if tok.Type == EOF {
-			break
-		}
-	}
-
-	assert.Equal(t, 3, count)
-}
-
 func TestLexer_StringQuotes(t *testing.T) {
 	t.Parallel()
 

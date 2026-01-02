@@ -34,11 +34,6 @@ func (p *Parser) eat(t TokenType) Token {
 func (p *Parser) ParseGrammar() *GrammarAST {
 	var rules []*RuleAST
 	for p.look.Type != EOF {
-		// skip empty lines
-		if p.look.Type == NEWLINE {
-			p.eat(NEWLINE)
-			continue
-		}
 		// process rule otherwise
 		rules = append(rules, p.parseRule())
 	}
@@ -50,27 +45,17 @@ func (p *Parser) parseRule() *RuleAST {
 	p.eat(ASSIGN)
 	expr := p.parseExpr()
 
-	// optional NEWLINE
-	if p.look.Type == NEWLINE {
-		p.eat(NEWLINE)
-	}
-
 	return &RuleAST{Name: name, Expr: expr}
 }
 
 func (p *Parser) parseExpr() ExprAST {
-	p.skipNewlines()
-
 	left := p.parseSeq()
 	options := []ExprAST{left}
 
 	for {
-		p.skipNewlines()
-
 		// multiline alternative
 		if p.look.Type == PIPE {
 			p.eat(PIPE)
-			p.skipNewlines()
 			options = append(options, p.parseSeq())
 			continue
 		}
@@ -93,8 +78,6 @@ func (p *Parser) parseSeq() ExprAST {
 	var elems []ExprAST
 
 	for {
-		p.skipNewlines()
-
 		// STOP conditions
 		if p.look.Type == PIPE || p.isRuleStart() || p.look.Type == EOF {
 			break
@@ -154,12 +137,6 @@ func (p *Parser) parseAtom() ExprAST {
 		return e
 	}
 	panic("unexpected token")
-}
-
-func (p *Parser) skipNewlines() {
-	for p.look.Type == NEWLINE {
-		p.eat(NEWLINE)
-	}
 }
 
 func (p *Parser) isRuleStart() bool {
