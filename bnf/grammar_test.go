@@ -15,7 +15,7 @@ func buildSimpleGrammar() *Grammar {
 			"S": {
 				Name: "S",
 				Expr: &sequence{
-					Elements: []Node{
+					Elements: []node{
 						&repeat{
 							Node: &terminal{"a"},
 							Min:  0,
@@ -78,11 +78,11 @@ func buildComplexGrammar() *Grammar {
 
 	// Expr ::= Term ("+" Term)*
 	expr.Expr = &sequence{
-		Elements: []Node{
+		Elements: []node{
 			termNT,
 			&repeat{
 				Node: &sequence{
-					Elements: []Node{
+					Elements: []node{
 						&terminal{Value: "+"},
 						termNT,
 					},
@@ -145,9 +145,9 @@ func buildLeftRecursiveGrammar() *Grammar {
 
 	// Expr ::= Expr "+" Term | Term
 	expr.Expr = &choice{
-		Options: []Node{
+		Options: []node{
 			&sequence{
-				Elements: []Node{
+				Elements: []node{
 					exprNT,
 					&terminal{Value: "+"},
 					termNT,
@@ -194,11 +194,11 @@ func TestRepeatAlone(t *testing.T) {
 	term := &terminal{Value: "a"}
 
 	expr := &sequence{
-		Elements: []Node{
+		Elements: []node{
 			term,
 			&repeat{
 				Node: &sequence{
-					Elements: []Node{
+					Elements: []node{
 						&terminal{Value: "+"},
 						term,
 					},

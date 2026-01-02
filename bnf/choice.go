@@ -1,7 +1,7 @@
 package bnf
 
 type choice struct {
-	Options []Node
+	Options []node
 }
 
 func (c *choice) match(ctx *context, pos int) []int {

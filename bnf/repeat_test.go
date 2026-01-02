@@ -32,7 +32,7 @@ func TestRepeatStarComplex(t *testing.T) {
 	// A ::= ("a" | "aa")*
 	r := &repeat{
 		Node: &choice{
-			Options: []Node{
+			Options: []node{
 				&terminal{"a"},
 				&terminal{"aa"},
 			},

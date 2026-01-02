@@ -10,7 +10,7 @@ func TestSequence(t *testing.T) {
 	t.Parallel()
 
 	seq := &sequence{
-		Elements: []Node{
+		Elements: []node{
 			&terminal{"a"},
 			&terminal{"b"},
 			&terminal{"c"},
@@ -27,13 +27,13 @@ func TestSequenceMultiPath(t *testing.T) {
 
 	// A ::= ("a" | "aa") "b"
 	choice := &choice{
-		Options: []Node{
+		Options: []node{
 			&terminal{"a"},
 			&terminal{"aa"},
 		},
 	}
 	seq := &sequence{
-		Elements: []Node{
+		Elements: []node{
 			choice,
 			&terminal{"b"},
 		},

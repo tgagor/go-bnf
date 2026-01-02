@@ -55,7 +55,7 @@ func BuildGrammar(ast *GrammarAST) *Grammar {
 	}
 }
 
-func buildNode(e ExprAST, rules map[string]*Rule) Node {
+func buildNode(e ExprAST, rules map[string]*Rule) node {
 	switch t := e.(type) {
 	case *StringAST:
 		return &terminal{Value: t.Value}
@@ -64,14 +64,14 @@ func buildNode(e ExprAST, rules map[string]*Rule) Node {
 		return &nonTerminal{Name: t.Name, Rule: rules[t.Name]}
 
 	case *SeqAST:
-		var elems []Node
+		var elems []node
 		for _, e := range t.Elements {
 			elems = append(elems, buildNode(e, rules))
 		}
 		return &sequence{Elements: elems}
 
 	case *ChoiceAST:
-		var opts []Node
+		var opts []node
 		for _, o := range t.Options {
 			opts = append(opts, buildNode(o, rules))
 		}

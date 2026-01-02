@@ -3,7 +3,7 @@ package bnf
 // A*  -> 0 or more repeats of A
 // A+  -> 1 or more repeats of A
 type repeat struct {
-	Node Node
+	Node node
 	Min  int // 0=*, 1=+
 }
 
