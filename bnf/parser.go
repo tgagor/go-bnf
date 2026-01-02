@@ -143,7 +143,7 @@ func (p *Parser) isRuleStart() bool {
 	return p.look.Type == IDENT && p.peek.Type == ASSIGN
 }
 
-func LoadGrammarIOReader(r io.Reader) *Grammar {
+func LoadGrammar(r io.Reader) *Grammar {
 	p := NewParser(r)
 	ast := p.ParseGrammar()
 	return BuildGrammar(ast)
@@ -156,9 +156,9 @@ func LoadGrammarFile(path string) (*Grammar, error) {
 	}
 	defer f.Close()
 
-	return LoadGrammarIOReader(f), nil
+	return LoadGrammar(f), nil
 }
 
 func LoadGrammarString(s string) *Grammar {
-	return LoadGrammarIOReader(strings.NewReader(s))
+	return LoadGrammar(strings.NewReader(s))
 }
