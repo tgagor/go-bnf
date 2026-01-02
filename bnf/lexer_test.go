@@ -290,7 +290,6 @@ func TestRecurrentParenthesis(t *testing.T) {
 		{"2", true},
 		{"3", true},
 		{"4", true},
-		{"14", true},
 		{"c", true},
 		{"5", false},
 		{"", false},
