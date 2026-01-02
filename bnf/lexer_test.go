@@ -274,3 +274,40 @@ func TestCommentWithWhitespace(t *testing.T) {
 
 	}
 }
+
+func TestRecurrentParenthesis(t *testing.T) {
+	t.Parallel()
+
+	g := LoadGrammarString(`
+		a ::= (((("1" | "2") | "3") | "4") | "c")
+	`)
+
+	tests := []struct {
+		input string
+		want  bool
+	}{
+		{"1", true},
+		{"2", true},
+		{"3", true},
+		{"4", true},
+		{"14", true},
+		{"c", true},
+		{"5", false},
+		{"", false},
+		{"12", false},
+		{"cc", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got, err := g.Match(tt.input)
+			if tt.want {
+				assert.True(t, got)
+				assert.NoError(t, err)
+			} else {
+				assert.False(t, got)
+				assert.Error(t, err)
+			}
+		})
+	}
+}
