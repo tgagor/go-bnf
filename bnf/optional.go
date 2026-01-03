@@ -4,9 +4,9 @@ type optional struct {
 	Node node
 }
 
-func (o *optional) match(ctx *context, pos int) ([]int, error) {
+func (o *optional) match(ctx *context, pos int) ([]MatchResult, error) {
 	// we can always match nothing
-	results := []int{pos}
+	results := []MatchResult{{End: pos, Nodes: nil}}
 
 	// try to match Node
 	matches, err := ctx.Match(o.Node, pos)
@@ -14,7 +14,8 @@ func (o *optional) match(ctx *context, pos int) ([]int, error) {
 		return nil, err
 	}
 	for _, m := range matches {
-		if m != pos { // protection against empty progress
+		if m.End != pos { // protection against empty progress, although optional usually allows it?
+			// Actually optional *is* the empty match. If node matches something, we return it.
 			results = append(results, m)
 		}
 	}

@@ -4,8 +4,8 @@ type choice struct {
 	Options []node
 }
 
-func (c *choice) match(ctx *context, pos int) ([]int, error) {
-	var results []int
+func (c *choice) match(ctx *context, pos int) ([]MatchResult, error) {
+	var results []MatchResult
 	for _, opt := range c.Options {
 		matches, err := ctx.Match(opt, pos)
 		if err != nil {
