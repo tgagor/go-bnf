@@ -38,12 +38,12 @@ func NewContext(input string) *context {
 	}
 }
 
-func (ctx *context) Match(node node, pos int) []int {
+func (ctx *context) Match(node node, pos int) ([]int, error) {
 	// fmt.Printf("MATCH %T %p @ %d\n", node, node, pos)
 
 	// just in case
 	if node == nil {
-		panic("nil node in Context!")
+		return nil, fmt.Errorf("nil node in Context")
 	}
 
 	if pos > ctx.CurrentPos {
@@ -58,9 +58,9 @@ func (ctx *context) Match(node node, pos int) []int {
 			// We've been here before in a recursive call.
 			// We return the "seed" result but mark that the rule needs re-evaluation.
 			// fmt.Printf("MATCH RECURSIVE %T @ %d -> %v\n", node, pos, entry.results)
-			return entry.results
+			return entry.results, nil
 		}
-		return entry.results
+		return entry.results, nil
 	}
 
 	// 2. Set up for potential left recursion.
@@ -73,7 +73,12 @@ func (ctx *context) Match(node node, pos int) []int {
 	//	  This may recursively call back into this same function.
 	// 2. Try to parse with the seed.
 	var lastResults []int
-	currentResults := node.match(ctx, pos)
+	currentResults, err := node.match(ctx, pos)
+	if err != nil {
+		ctx.activeCounts[pos]--
+		delete(ctx.memo, key)
+		return nil, err
+	}
 	// fmt.Printf("MATCH FIRST %T @ %d -> %v\n", node, pos, currentResults)
 
 	// 3. "Grow" the result. Keep parsing as long as the match gets longer.
@@ -82,7 +87,12 @@ func (ctx *context) Match(node node, pos int) []int {
 		lastResults = currentResults
 		// Important: Update the cache with the better result BEFORE re-evaluating.
 		ctx.memo[key] = &memoEntry{isLeftRecursive: true, results: lastResults}
-		currentResults = node.match(ctx, pos)
+		currentResults, err = node.match(ctx, pos)
+		if err != nil {
+			ctx.activeCounts[pos]--
+			delete(ctx.memo, key)
+			return nil, err
+		}
 	}
 
 	// 4. Finalize the result. Mark that we are done with this rule.
@@ -111,7 +121,7 @@ func (ctx *context) Match(node node, pos int) []int {
 		}
 	}
 
-	return currentResults
+	return currentResults, nil
 }
 
 func (ctx *context) makeError(n node) *ParseError {
@@ -212,11 +222,12 @@ func (ctx *context) push(name string) {
 	ctx.stack = append(ctx.stack, name)
 }
 
-func (ctx *context) pop() {
+func (ctx *context) pop() error {
 	if len(ctx.stack) == 0 {
-		panic("pop on empty context stack")
+		return fmt.Errorf("pop on empty context stack")
 	}
 	ctx.stack = ctx.stack[:len(ctx.stack)-1]
+	return nil
 }
 
 func (ctx *context) stackSnapshot() []string {

@@ -1,13 +1,15 @@
 package bnf
 
+import "fmt"
+
 type nonTerminal struct {
 	Name string
 	Rule *Rule // will be set up in 2nd pass
 }
 
-func (n *nonTerminal) match(ctx *context, pos int) []int {
+func (n *nonTerminal) match(ctx *context, pos int) ([]int, error) {
 	if n.Rule == nil {
-		panic("NonTerminal without Rule: " + n.Name)
+		return nil, fmt.Errorf("NonTerminal without Rule: %s", n.Name)
 	}
 
 	// debug / call stack tracking

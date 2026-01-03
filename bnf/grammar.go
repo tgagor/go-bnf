@@ -1,11 +1,12 @@
 package bnf
 
 import (
+	"fmt"
 	"slices"
 )
 
 type node interface {
-	match(ctx *context, pos int) []int
+	match(ctx *context, pos int) ([]int, error)
 	Expect() []string // for error reporting, node types expected at this point
 }
 
@@ -52,7 +53,7 @@ func (g *Grammar) SetStart(name string) {
 
 func (g *Grammar) Match(input string) (bool, error) {
 	if g.Start == "" {
-		panic("start rule not defined")
+		return false, fmt.Errorf("start rule not defined")
 	}
 	return g.MatchFrom(g.Start, input)
 }
@@ -60,11 +61,14 @@ func (g *Grammar) Match(input string) (bool, error) {
 func (g *Grammar) MatchFrom(start string, input string) (bool, error) {
 	rule, ok := g.Rules[start]
 	if !ok {
-		panic("unknown start rule: " + start)
+		return false, fmt.Errorf("unknown start rule: %s", start)
 	}
 
 	ctx := NewContext(input)
-	matches := ctx.Match(rule.Expr, 0)
+	matches, err := ctx.Match(rule.Expr, 0)
+	if err != nil {
+		return false, err
+	}
 	if slices.Contains(matches, len(input)) {
 		return true, nil
 	}
@@ -75,5 +79,9 @@ func (g *Grammar) MatchFrom(start string, input string) (bool, error) {
 func (g *Grammar) MatchPrefix(input string) bool {
 	start := g.Rules[g.Start]
 	ctx := NewContext(input)
-	return len(ctx.Match(start.Expr, 0)) > 0
+	matches, err := ctx.Match(start.Expr, 0)
+	if err != nil {
+		return false
+	}
+	return len(matches) > 0
 }

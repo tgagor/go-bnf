@@ -7,7 +7,7 @@ type repeat struct {
 	Min  int // 0=*, 1=+
 }
 
-func (r *repeat) match(ctx *context, pos int) []int {
+func (r *repeat) match(ctx *context, pos int) ([]int, error) {
 	current := []int{pos}
 	var results []int
 
@@ -18,7 +18,11 @@ func (r *repeat) match(ctx *context, pos int) []int {
 
 		var next []int
 		for _, p := range current {
-			for _, m := range ctx.Match(r.Node, p) {
+			matches, err := ctx.Match(r.Node, p)
+			if err != nil {
+				return nil, err
+			}
+			for _, m := range matches {
 				// safety check to prevent infinite loops
 				if m > p {
 					next = append(next, m)
@@ -31,7 +35,7 @@ func (r *repeat) match(ctx *context, pos int) []int {
 		}
 		current = next
 	}
-	return results
+	return results, nil
 }
 
 func (r *repeat) Expect() []string {
