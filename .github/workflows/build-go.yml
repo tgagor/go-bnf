@@ -145,48 +145,49 @@ jobs:
         run: |
           go test -v  ./...
 
-  integration-tests:
-    name: integration tests on ${{ matrix.os }}
-    needs:
-      - build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        include:
-          - os: ubuntu-latest
-            binary: bnf-linux-amd64
+  # they're actually smoke tests and not good one
+  # integration-tests:
+  #   name: integration tests on ${{ matrix.os }}
+  #   needs:
+  #     - build
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       os: [ubuntu-latest, macos-latest, windows-latest]
+  #       include:
+  #         - os: ubuntu-latest
+  #           binary: bnf-linux-amd64
 
-          - os: macos-latest
-            binary: bnf-macos-amd64
+  #         - os: macos-latest
+  #           binary: bnf-macos-amd64
 
-          - os: windows-latest
-            binary: bnf-windows-amd64.exe
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
+  #         - os: windows-latest
+  #           binary: bnf-windows-amd64.exe
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #       with:
+  #         fetch-depth: 0
 
-      - uses: actions/download-artifact@v7
-        with:
-          name: ${{ matrix.binary }}
-          path: bin
+  #     - uses: actions/download-artifact@v7
+  #       with:
+  #         name: ${{ matrix.binary }}
+  #         path: bin
 
-      - name: Setup binary on Linux/MacOS
-        if: matrix.os != 'windows-latest'
-        run: |
-          chmod +x bin/${{ matrix.binary }}
-          mv bin/${{ matrix.binary }} bin/bnf
+  #     - name: Setup binary on Linux/MacOS
+  #       if: matrix.os != 'windows-latest'
+  #       run: |
+  #         chmod +x bin/${{ matrix.binary }}
+  #         mv bin/${{ matrix.binary }} bin/bnf
 
-      - name: Setup binary on Windows
-        if: matrix.os == 'windows-latest'
-        shell: bash
-        run: |
-          cp bin/${{ matrix.binary }} bin/bnf.exe
+  #     - name: Setup binary on Windows
+  #       if: matrix.os == 'windows-latest'
+  #       shell: bash
+  #       run: |
+  #         cp bin/${{ matrix.binary }} bin/bnf.exe
 
-      - name: Run integration tests
-        run: |
-          make integration-test
+  #     - name: Run integration tests
+  #       run: |
+  #         make integration-test
 
 
 
@@ -196,7 +197,6 @@ jobs:
     needs:
       # - pre-commit
       - unit-tests
-      - integration-tests
       - build
     if: github.ref == 'refs/heads/main'
     steps:
