@@ -53,7 +53,7 @@ func loadFile(file string, lineByLine bool) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		return []string{strings.TrimSpace(string(content))}, nil
+		return []string{string(content)}, nil
 	}
 }
 
