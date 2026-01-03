@@ -53,7 +53,7 @@ func loadFile(file string, lineByLine bool) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		return []string{string(content)}, nil
+		return []string{strings.TrimSpace(string(content))}, nil
 	}
 }
 
@@ -95,7 +95,17 @@ func (cli *CLI) Run() error {
 		if match {
 			fmt.Println(" -> matched")
 		} else {
-			fmt.Printf("\n%s\n\n", err.(*bnf.ParseError).Pretty(l))
+			if err == nil {
+				fmt.Println(" -> not matched (no error details)")
+			} else if pe, ok := err.(*bnf.ParseError); ok {
+				if pe == nil {
+					fmt.Println(" -> not matched (nil ParseError)")
+				} else {
+					fmt.Printf("\n%s\n\n", pe.Pretty(l))
+				}
+			} else {
+				fmt.Printf(" -> error: %v\n", err)
+			}
 		}
 	}
 
