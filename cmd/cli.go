@@ -3,7 +3,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"go-bnf/bnf"
+	"github.com/tgagor/go-bnf/bnf"
 	"io"
 	"os"
 	"strings"
