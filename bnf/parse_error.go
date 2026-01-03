@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// ParseError records the details of a failed parse attempt, including the position and expectations.
 type ParseError struct {
 	Pos    int
 	Line   int
@@ -18,6 +19,7 @@ type ParseError struct {
 	Width int // number of characters to highlight
 }
 
+// Error returns a basic string description of the parse error.
 func (err *ParseError) Error() string {
 	return fmt.Sprintf(
 		"  Parse error at line %d, col %d\n  While matching rule: %s\n  Expected: %v\n  Found: %s\n",
@@ -25,6 +27,7 @@ func (err *ParseError) Error() string {
 	)
 }
 
+// Pretty returns a formatted, multi-line error message with a visual pointer to the failure location.
 func (e *ParseError) Pretty(input string) string {
 	var sb strings.Builder
 

@@ -7,12 +7,14 @@ import (
 	"strings"
 )
 
+// Parser converts a stream of BNF tokens into a GrammarAST.
 type Parser struct {
 	lx   *Lexer
 	look Token
 	peek Token
 }
 
+// NewParser creates a new Parser for the given reader.
 func NewParser(r io.Reader) (*Parser, error) {
 	lx := NewLexer(r)
 	look, err := lx.Next()
@@ -44,6 +46,7 @@ func (p *Parser) eat(t TokenType) (Token, error) {
 	return tok, nil
 }
 
+// ParseGrammar parses the input into a complete GrammarAST.
 func (p *Parser) ParseGrammar() (*GrammarAST, error) {
 	var rules []*RuleAST
 	for p.look.Type != EOF {
@@ -206,6 +209,7 @@ func (p *Parser) isRuleStart() bool {
 	return p.look.Type == IDENT && p.peek.Type == ASSIGN
 }
 
+// LoadGrammar reads a BNF grammar from an io.Reader and builds a Grammar object.
 func LoadGrammar(r io.Reader) (*Grammar, error) {
 	p, err := NewParser(r)
 	if err != nil {
@@ -218,6 +222,7 @@ func LoadGrammar(r io.Reader) (*Grammar, error) {
 	return BuildGrammar(ast)
 }
 
+// LoadGrammarFile reads a BNF grammar from a file and builds a Grammar object.
 func LoadGrammarFile(path string) (*Grammar, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -228,6 +233,7 @@ func LoadGrammarFile(path string) (*Grammar, error) {
 	return LoadGrammar(f)
 }
 
+// LoadGrammarString reads a BNF grammar from a string and builds a Grammar object.
 func LoadGrammarString(s string) (*Grammar, error) {
 	return LoadGrammar(strings.NewReader(s))
 }

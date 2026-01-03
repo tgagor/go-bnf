@@ -10,8 +10,8 @@ type memoKey struct {
 }
 
 type memoEntry struct {
-	results         []MatchResult // remember results`
-	isLeftRecursive bool          // detect left sided recurency
+	results         []MatchResult // remember results
+	isLeftRecursive bool          // detect left-sided recursion
 }
 
 type context struct {

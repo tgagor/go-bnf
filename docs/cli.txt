@@ -1,0 +1,27 @@
+package cmd // import "go-bnf/cmd"
+
+
+TYPES
+
+type CLI struct {
+	BuildVersion string
+	AppName      string
+
+	GrammarFile     string
+	VerifyFile      string
+	LineByLine      bool
+	ValidateGrammar bool
+	ParseAsAST      bool
+	StartRule       string
+	Output          io.Writer
+}
+    CLI handles the command-line interface execution flow, including grammar
+    loading and input verification.
+
+func New(buildVersion, appName, grammarFile, verifyFile string, lineByLine, validateGrammar, parseAsAST bool, startRule string, output io.Writer) *CLI
+    New creates a new CLI instance with the specified configuration.
+
+func (cli *CLI) Run() error
+    Run executes the CLI logic: loads the grammar, validates it, and
+    matches/parses the provided input.
+

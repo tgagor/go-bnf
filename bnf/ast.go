@@ -2,42 +2,50 @@ package bnf
 
 import "fmt"
 
-// raw AST, without links yet
+// GrammarAST represents the raw AST of a BNF grammar before it is built into a Grammar object.
 type GrammarAST struct {
 	Rules []*RuleAST
 }
 
+// RuleAST represents a single rule in the GrammarAST.
 type RuleAST struct {
 	Name string
 	Expr ExprAST
 }
 
+// ExprAST is a marker interface for all AST expression nodes.
 type ExprAST any
 
 type (
+	// ChoiceAST represents a choice between multiple alternatives (e.g., "a" | "b").
 	ChoiceAST struct {
 		Options []ExprAST
 	}
 
+	// SeqAST represents a sequence of expressions (e.g., "a" "b").
 	SeqAST struct {
 		Elements []ExprAST
 	}
 
+	// RepeatAST represents a repetition of an expression (e.g., "a"*, "a"+, "a"?).
 	RepeatAST struct {
 		Node ExprAST
 		Min  int
 		Max  int // -1 = infinity
 	}
 
+	// IdentAST represents a reference to another rule.
 	IdentAST struct {
 		Name string
 	}
 
+	// StringAST represents a literal string terminal.
 	StringAST struct {
 		Value string
 	}
 )
 
+// BuildGrammar converts a raw GrammarAST into a functional Grammar object with linked rules.
 func BuildGrammar(ast *GrammarAST) (*Grammar, error) {
 	rules := map[string]*Rule{}
 

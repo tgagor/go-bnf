@@ -4,16 +4,19 @@ import (
 	"fmt"
 )
 
+// Rule represents a single BNF rule with its name and expression.
 type Rule struct {
 	Name string
 	Expr node
 }
 
+// Grammar represents a complete set of BNF rules and an optional start rule.
 type Grammar struct {
 	Rules map[string]*Rule
 	Start string
 }
 
+// Resolve recursively links all non-terminal nodes in the grammar to their rule definitions.
 func (g *Grammar) Resolve() error {
 	for _, rule := range g.Rules {
 		if err := resolveNode(rule.Expr, g.Rules); err != nil {
@@ -52,6 +55,7 @@ func resolveNode(n node, rules map[string]*Rule) error {
 	return nil
 }
 
+// ValidateGrammar checks if the grammar is self-consistent (all referenced rules exist and a start rule is defined).
 func (g *Grammar) ValidateGrammar() error {
 	if g.Start == "" {
 		return fmt.Errorf("no start rule defined")
@@ -62,6 +66,7 @@ func (g *Grammar) ValidateGrammar() error {
 	return g.Resolve()
 }
 
+// SetStart sets the entry rule for matching and parsing.
 func (g *Grammar) SetStart(name string) {
 	g.Start = name
 }
@@ -72,6 +77,7 @@ func (g *Grammar) Validate(input string) (bool, error) {
 	return g.Match(input)
 }
 
+// Match checks if the entire input matches the grammar starting from the defined start rule.
 func (g *Grammar) Match(input string) (bool, error) {
 	if g.Start == "" {
 		return false, fmt.Errorf("start rule not defined")
@@ -79,6 +85,7 @@ func (g *Grammar) Match(input string) (bool, error) {
 	return g.MatchFrom(g.Start, input)
 }
 
+// MatchFrom checks if the entire input matches the grammar starting from the specified rule.
 func (g *Grammar) MatchFrom(start string, input string) (bool, error) {
 	rule, ok := g.Rules[start]
 	if !ok {
@@ -100,6 +107,7 @@ func (g *Grammar) MatchFrom(start string, input string) (bool, error) {
 	return false, ctx.error
 }
 
+// MatchPrefix checks if any prefix of the input matches the grammar start rule.
 func (g *Grammar) MatchPrefix(input string) bool {
 	start := g.Rules[g.Start]
 	ctx := NewContext(input)

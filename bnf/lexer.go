@@ -7,35 +7,40 @@ import (
 	"strings"
 )
 
+// TokenType represents the category of a lexed token.
 type TokenType int
 
 const (
 	EOF      TokenType = iota
-	IDENT              // digit
-	NT_IDENT           // <digit>
-	STRING             // "a string"
-	ASSIGN             // ::=
-	PIPE               // |
-	STAR               // *
-	PLUS               // +
-	QMARK              // ?
-	LPAREN             // (
-	RPAREN             // )
+	IDENT              // generic identifier or BNF rule name
+	NT_IDENT           // BNF rule name explicitly in angle brackets (<rule>)
+	STRING             // quoted string literal
+	ASSIGN             // the ::= operator
+	PIPE               // the | operator
+	STAR               // the * operator
+	PLUS               // the + operator
+	QMARK              // the ? operator
+	LPAREN             // the ( operator
+	RPAREN             // the ) operator
 )
 
+// Token represents a single atom (lexeme) in the input BNF grammar.
 type Token struct {
 	Type TokenType
 	Text string
 }
 
+// Lexer breaks the BNF grammar input into a stream of tokens.
 type Lexer struct {
 	r *bufio.Reader
 }
 
+// NewLexer creates a new Lexer for the given reader.
 func NewLexer(r io.Reader) *Lexer {
 	return &Lexer{r: bufio.NewReader(r)}
 }
 
+// Next returns the next token from the input stream.
 func (l *Lexer) Next() (Token, error) {
 	// 1. skip whitespace
 	for {
@@ -217,7 +222,7 @@ func (l *Lexer) Next() (Token, error) {
 		return Token{}, fmt.Errorf("expected ::=")
 	}
 
-	// 5. pojedyncze symbole
+	// 5. Single symbols
 	switch ch {
 	case '|':
 		return Token{Type: PIPE, Text: "|"}, nil
