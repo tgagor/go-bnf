@@ -16,29 +16,50 @@ type Grammar struct {
 
 func (g *Grammar) Resolve() error {
 	for _, rule := range g.Rules {
-		resolveNode(rule.Expr, g.Rules)
+		if err := resolveNode(rule.Expr, g.Rules); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func resolveNode(n node, rules map[string]*Rule) {
+func resolveNode(n node, rules map[string]*Rule) error {
 	switch t := n.(type) {
 	case *nonTerminal:
-		t.Rule = rules[t.Name]
+		rule, ok := rules[t.Name]
+		if !ok {
+			return fmt.Errorf("undefined rule: %s", t.Name)
+		}
+		t.Rule = rule
 	case *sequence:
 		for _, e := range t.Elements {
-			resolveNode(e, rules)
+			if err := resolveNode(e, rules); err != nil {
+				return err
+			}
 		}
 	case *choice:
 		for _, o := range t.Options {
-			resolveNode(o, rules)
+			if err := resolveNode(o, rules); err != nil {
+				return err
+			}
 		}
 	case *repeat:
-		resolveNode(t.Node, rules)
-		// case *Optional:
-		// 	resolveNode(t.Node, rules)
+		return resolveNode(t.Node, rules)
+	case *optional:
+		return resolveNode(t.Node, rules)
 	}
+	return nil
+}
+
+func (g *Grammar) ValidateGrammar() error {
+	if g.Start == "" {
+		return fmt.Errorf("no start rule defined")
+	}
+	if _, ok := g.Rules[g.Start]; !ok {
+		return fmt.Errorf("start rule %q is not defined", g.Start)
+	}
+	return g.Resolve()
 }
 
 func (g *Grammar) SetStart(name string) {

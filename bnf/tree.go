@@ -1,6 +1,9 @@
 package bnf
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // ASTNode represents a node in the parsed output tree (the Parse Tree).
 type ASTNode struct {
@@ -10,16 +13,39 @@ type ASTNode struct {
 }
 
 func (n *ASTNode) String() string {
-	if n.Type == "TERMINAL" {
-		return n.Value
-	}
 	var sb strings.Builder
+	n.format(&sb, 0)
+	return sb.String()
+}
+
+func (n *ASTNode) format(sb *strings.Builder, level int) {
+	indent := strings.Repeat("  ", level)
+
+	// Terminals are leaf nodes
+	if n.Type == "TERMINAL" || n.Type == "REGEX" {
+		sb.WriteString(indent)
+		sb.WriteString(fmt.Sprintf("%q", n.Value))
+		return
+	}
+
+	sb.WriteString(indent)
 	sb.WriteString("(")
 	sb.WriteString(n.Type)
-	for _, c := range n.Children {
-		sb.WriteString(" ")
-		sb.WriteString(c.String())
+
+	if len(n.Children) == 0 {
+		if n.Value != "" {
+			sb.WriteString(" ")
+			sb.WriteString(fmt.Sprintf("%q", n.Value))
+		}
+		sb.WriteString(")")
+		return
 	}
+
+	for _, child := range n.Children {
+		sb.WriteString("\n")
+		child.format(sb, level+1)
+	}
+	sb.WriteString("\n")
+	sb.WriteString(indent)
 	sb.WriteString(")")
-	return sb.String()
 }

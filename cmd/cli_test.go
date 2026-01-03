@@ -10,7 +10,7 @@ import (
 
 func TestNew(t *testing.T) {
 	// Paths don't need to exist for New
-	cli := New("1.0.0", "test-app", "../tests/simple.bnf", "../tests/input_match.txt", true)
+	cli := New("1.0.0", "test-app", "../tests/simple.bnf", "../tests/input_match.txt", true, false, false, "")
 
 	assert.NotNil(t, cli)
 	assert.Equal(t, "1.0.0", cli.BuildVersion)
@@ -25,7 +25,7 @@ func TestRun_Success(t *testing.T) {
 	grammarFile := filepath.Join("..", "tests", "simple.bnf")
 	inputFile := filepath.Join("..", "tests", "input_match.txt")
 
-	cli := New("0.0.1", "test", grammarFile, inputFile, false)
+	cli := New("0.0.1", "test", grammarFile, inputFile, false, false, false, "")
 
 	err := cli.Run()
 	assert.NoError(t, err)
@@ -36,7 +36,7 @@ func TestRun_LineByLine(t *testing.T) {
 	grammarFile := filepath.Join("..", "tests", "simple.bnf")
 	inputFile := filepath.Join("..", "tests", "input_multiline.txt")
 
-	cli := New("0.0.1", "test", grammarFile, inputFile, true)
+	cli := New("0.0.1", "test", grammarFile, inputFile, true, false, false, "")
 
 	err := cli.Run()
 	assert.NoError(t, err)
@@ -47,7 +47,7 @@ func TestRun_Mismatch(t *testing.T) {
 	grammarFile := filepath.Join("..", "tests", "simple.bnf")
 	inputFile := filepath.Join("..", "tests", "input_mismatch.txt")
 
-	cli := New("0.0.1", "test", grammarFile, inputFile, false)
+	cli := New("0.0.1", "test", grammarFile, inputFile, false, false, false, "")
 
 	err := cli.Run()
 	// Current implementation: Run() returns nil even on mismatch,
@@ -62,7 +62,7 @@ func TestRun_Postal(t *testing.T) {
 	for i := range 4 {
 		inputFile := filepath.Join("..", "examples", fmt.Sprintf("postal%d.txt", i+1))
 
-		cli := New("0.0.1", "test", grammarFile, inputFile, false)
+		cli := New("0.0.1", "test", grammarFile, inputFile, false, false, false, "")
 
 		err := cli.Run()
 		assert.NoError(t, err)
@@ -74,7 +74,7 @@ func TestRun_Numbers(t *testing.T) {
 	grammarFile := filepath.Join("..", "examples", "numbers.bnf")
 	inputFile := filepath.Join("..", "examples", "numbers.test")
 
-	cli := New("0.0.1", "test", grammarFile, inputFile, true)
+	cli := New("0.0.1", "test", grammarFile, inputFile, true, false, false, "")
 
 	err := cli.Run()
 	assert.NoError(t, err)
