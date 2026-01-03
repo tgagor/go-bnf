@@ -7,35 +7,46 @@ type repeat struct {
 	Min  int // 0=*, 1=+
 }
 
-func (r *repeat) match(ctx *context, pos int) ([]int, error) {
-	current := []int{pos}
-	var results []int
+func (r *repeat) match(ctx *context, pos int) ([]MatchResult, error) {
+	// Start with empty match
+	currentResults := []MatchResult{{End: pos, Nodes: nil}}
+	var finalResults []MatchResult
 
 	for i := 0; ; i++ {
 		if i >= r.Min {
-			results = append(results, current...)
+			// Current state is valid, add to final results
+			finalResults = append(finalResults, currentResults...)
 		}
 
-		var next []int
-		for _, p := range current {
-			matches, err := ctx.Match(r.Node, p)
+		var nextResults []MatchResult
+		for _, res := range currentResults {
+			// Try to match more
+			matches, err := ctx.Match(r.Node, res.End)
 			if err != nil {
 				return nil, err
 			}
 			for _, m := range matches {
-				// safety check to prevent infinite loops
-				if m > p {
-					next = append(next, m)
+				// Prevent infinite loops on empty matches
+				if m.End > res.End {
+					// Combine nodes
+					newNodes := make([]*ASTNode, len(res.Nodes)+len(m.Nodes))
+					copy(newNodes, res.Nodes)
+					copy(newNodes[len(res.Nodes):], m.Nodes)
+
+					nextResults = append(nextResults, MatchResult{
+						End:   m.End,
+						Nodes: newNodes,
+					})
 				}
 			}
 		}
 
-		if len(next) == 0 {
+		if len(nextResults) == 0 {
 			break
 		}
-		current = next
+		currentResults = nextResults
 	}
-	return results, nil
+	return finalResults, nil
 }
 
 func (r *repeat) Expect() []string {

@@ -2,7 +2,6 @@ package bnf
 
 import (
 	"fmt"
-	"slices"
 )
 
 type memoKey struct {
@@ -11,8 +10,8 @@ type memoKey struct {
 }
 
 type memoEntry struct {
-	results         []int // remember results`
-	isLeftRecursive bool  // detect left sided recurency
+	results         []MatchResult // remember results`
+	isLeftRecursive bool          // detect left sided recurency
 }
 
 type context struct {
@@ -38,55 +37,62 @@ func NewContext(input string) *context {
 	}
 }
 
-func (ctx *context) Match(node node, pos int) ([]int, error) {
-	// fmt.Printf("MATCH %T %p @ %d\n", node, node, pos)
-
-	// just in case
+func (ctx *context) Match(node node, pos int) ([]MatchResult, error) {
+	// Simple safety check.
 	if node == nil {
 		return nil, fmt.Errorf("nil node in Context")
 	}
 
+	// Track the deepest position reached for error reporting.
 	if pos > ctx.CurrentPos {
 		ctx.CurrentPos = pos
 	}
 
-	// 1. If already calculared - return cache
+	// 1. Check Memoization Cache
+	// If we have a result for this (node, pos) pair, return it immediately.
 	key := memoKey{node: node, pos: pos}
 	if entry, ok := ctx.memo[key]; ok {
 		if entry.isLeftRecursive {
-			// This is the crucial part for handling left recursion.
-			// We've been here before in a recursive call.
-			// We return the "seed" result but mark that the rule needs re-evaluation.
-			// fmt.Printf("MATCH RECURSIVE %T @ %d -> %v\n", node, pos, entry.results)
+			// CRITICAL: Left Recursion Handling.
+			// If we hit a cache entry marked 'isLeftRecursive', it means we are inside
+			// a recursive call for this same rule at this same position.
+			// We return the current "seed" result (which starts as failure/nil)
+			// to allow the parser to make progress and potentially find a base case.
 			return entry.results, nil
 		}
 		return entry.results, nil
 	}
 
-	// 2. Set up for potential left recursion.
-	//    Assume failure (the "seed" result) and mark it as left-recursive.
+	// 2. Initialize for Left Recursion
+	// We haven't visited this node at this pos yet. To handle potential direct or indirect
+	// left recursion, we insert a "seed" entry into the memo table. This seed assumes
+	// failure (nil results) initially. If we recurse back here, step 1 will return this nil.
 	entry := &memoEntry{isLeftRecursive: true, results: nil}
 	ctx.memo[key] = entry
 	ctx.activeCounts[pos]++
 
-	// 2. Try to parse with the seed.
-	//	  This may recursively call back into this same function.
-	// 2. Try to parse with the seed.
-	var lastResults []int
+	// 3. First Parse Attempt
+	// Compute the result using the current seed.
+	var lastResults []MatchResult
 	currentResults, err := node.match(ctx, pos)
 	if err != nil {
 		ctx.activeCounts[pos]--
 		delete(ctx.memo, key)
 		return nil, err
 	}
-	// fmt.Printf("MATCH FIRST %T @ %d -> %v\n", node, pos, currentResults)
 
-	// 3. "Grow" the result. Keep parsing as long as the match gets longer.
-	for !slices.Equal(currentResults, lastResults) {
-		// fmt.Printf("MATCH GROW %T @ %d: %v != %v\n", node, pos, currentResults, lastResults)
+	// 4. Grow the Seed (Iterative Step)
+	// If this rule is left-recursive, we might have computed a result based on the nil seed.
+	// Now we update the cache with this new result and try to parse AGAIN.
+	// This allows the recursion to "grow" (unroll) one more level.
+	// We repeat this until the results stop changing (stabilize).
+	// We compare 'End' positions to detect stability.
+	for !resultsEndEqual(currentResults, lastResults) {
 		lastResults = currentResults
-		// Important: Update the cache with the better result BEFORE re-evaluating.
+
+		// Update cache with the latest better result before re-evaluating.
 		ctx.memo[key] = &memoEntry{isLeftRecursive: true, results: lastResults}
+
 		currentResults, err = node.match(ctx, pos)
 		if err != nil {
 			ctx.activeCounts[pos]--
@@ -95,33 +101,47 @@ func (ctx *context) Match(node node, pos int) ([]int, error) {
 		}
 	}
 
-	// 4. Finalize the result. Mark that we are done with this rule.
+	// 5. Cleanup and Finalize
+	// We are done with this node at this position.
 	ctx.activeCounts[pos]--
 	if ctx.activeCounts[pos] > 0 {
-		// We are inside another active rule at this position.
-		// Our result might depend on a "Recursive Seed" (nil or partial) of that active rule.
-		// Do not memoize permanently.
+		// If other rules are still active at this position, our result might depend on
+		// their temporary seeds. We cannot permanently memoize this result yet because
+		// it might change when those parent rules grow.
 		delete(ctx.memo, key)
 	} else {
+		// No active recursion stack at this position, so this result is final and safe to cache.
 		ctx.memo[key] = &memoEntry{isLeftRecursive: false, results: currentResults}
 	}
 
-	// 5. error tracking
-	// we're looking for the farthest position reached
-	// if pos < farthest, ignore
-	// if pos > farthest, update farthest
-	// if pos == farthest, merge expected tokens, to list them all
+	// 6. Error Tracking
+	// If we failed to match anything, we record error information.
+	// We track the "farthest failure" (deepest position) to provide helpful error messages.
+	// If we reached the same farthest position again, we merge the expected tokens.
 	if len(currentResults) == 0 {
 		if ctx.error == nil || ctx.CurrentPos > ctx.FarthestPos {
 			ctx.FarthestPos = ctx.CurrentPos
 			ctx.error = ctx.makeError(node)
 		} else if ctx.CurrentPos == ctx.FarthestPos {
-			// merge expected tokens
 			ctx.error.Expected = mergeExpected(ctx.error.Expected, node.Expect())
 		}
 	}
 
 	return currentResults, nil
+}
+
+func resultsEndEqual(a, b []MatchResult) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	// Sort? Order matters? Standard logic usually assumes ordered or stable order.
+	// Our match implementations (sequence, choice) are deterministic in order.
+	for i := range a {
+		if a[i].End != b[i].End {
+			return false
+		}
+	}
+	return true
 }
 
 func (ctx *context) makeError(n node) *ParseError {

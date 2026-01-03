@@ -40,15 +40,18 @@ func TestOptionalPlus_Terminal(t *testing.T) {
 		Min: 1,
 	}
 
-	ctx := NewContext("a")
-	res, _ := ctx.Match(node, 0)
-	assert.True(t, slices.Contains(res, 1))
+	// Helper to extract ends
+	ends := func(input string) []int {
+		ctx := NewContext(input)
+		res, _ := ctx.Match(node, 0)
+		var out []int
+		for _, r := range res {
+			out = append(out, r.End)
+		}
+		return out
+	}
 
-	ctx = NewContext("aa")
-	res, _ = ctx.Match(node, 0)
-	assert.True(t, slices.Contains(res, 2))
-
-	ctx = NewContext("")
-	res, _ = ctx.Match(node, 0)
-	assert.False(t, slices.Contains(res, 0))
+	assert.True(t, slices.Contains(ends("a"), 1))
+	assert.True(t, slices.Contains(ends("aa"), 2))
+	assert.False(t, slices.Contains(ends(""), 0))
 }
