@@ -50,7 +50,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cli := cmd.New(BuildVersion, appName, grammarFile, inputFile, lineByLine, validateGrammar, parseAsAST, startRule)
+	cli := cmd.New(BuildVersion, appName, grammarFile, inputFile, lineByLine, validateGrammar, parseAsAST, startRule, nil)
 	if err := cli.Run(); err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
