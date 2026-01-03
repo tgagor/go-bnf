@@ -2,6 +2,7 @@ package bnf
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"strings"
 )
@@ -35,12 +36,15 @@ func NewLexer(r io.Reader) *Lexer {
 	return &Lexer{r: bufio.NewReader(r)}
 }
 
-func (l *Lexer) Next() Token {
+func (l *Lexer) Next() (Token, error) {
 	// 1. skip whitespace
 	for {
 		ch, _, err := l.r.ReadRune()
 		if err == io.EOF {
-			return Token{Type: EOF}
+			return Token{Type: EOF}, nil
+		}
+		if err != nil {
+			return Token{}, err
 		}
 
 		if isWhitespace(ch) {
@@ -49,14 +53,31 @@ func (l *Lexer) Next() Token {
 
 		// line comment
 		if ch == ';' || ch == '#' {
-			l.skipUntilEOL()
+			if err := l.skipUntilEOL(); err != nil {
+				if err == io.EOF {
+					return Token{Type: EOF}, nil
+				}
+				return Token{}, err
+			}
 			continue
 		}
 
 		if ch == '/' {
 			next, _, err := l.r.ReadRune()
-			if err == nil && next == '/' {
-				l.skipUntilEOL()
+			if err != nil {
+				if err == io.EOF {
+					// just slash at the end? might be unexpected char
+					return Token{}, fmt.Errorf("unexpected EOF after '/'")
+				}
+				return Token{}, err
+			}
+			if next == '/' {
+				if err := l.skipUntilEOL(); err != nil {
+					if err == io.EOF {
+						return Token{Type: EOF}, nil
+					}
+					return Token{}, err
+				}
 				continue
 			}
 			l.r.UnreadRune()
@@ -69,7 +90,10 @@ func (l *Lexer) Next() Token {
 
 	ch, _, err := l.r.ReadRune()
 	if err == io.EOF {
-		return Token{Type: EOF}
+		return Token{Type: EOF}, nil
+	}
+	if err != nil {
+		return Token{}, err
 	}
 
 	// 2. identificator
@@ -79,10 +103,14 @@ func (l *Lexer) Next() Token {
 
 		for {
 			ch, _, err := l.r.ReadRune()
-			if err != nil || !isIdentPart(ch) {
-				if err == nil {
-					l.r.UnreadRune()
+			if err != nil {
+				if err == io.EOF {
+					break // legitimate end of ident
 				}
+				return Token{}, err
+			}
+			if !isIdentPart(ch) {
+				l.r.UnreadRune()
 				break
 			}
 			sb.WriteRune(ch)
@@ -91,7 +119,7 @@ func (l *Lexer) Next() Token {
 		return Token{
 			Type: IDENT,
 			Text: sb.String(),
-		}
+		}, nil
 	}
 
 	// 2.5. <identificator>
@@ -101,25 +129,28 @@ func (l *Lexer) Next() Token {
 		for {
 			ch, _, err := l.r.ReadRune()
 			if err != nil {
-				panic("unterminated <identifier>")
+				if err == io.EOF {
+					return Token{}, fmt.Errorf("unterminated <identifier>")
+				}
+				return Token{}, err
 			}
 			if ch == '>' {
 				break
 			}
 			if !isIdentPart(ch) {
-				panic("invalid character in <identifier>: " + string(ch))
+				return Token{}, fmt.Errorf("invalid character in <identifier>: %q", ch)
 			}
 			sb.WriteRune(ch)
 		}
 
 		if sb.Len() == 0 {
-			panic("empty <identifier>")
+			return Token{}, fmt.Errorf("empty <identifier>")
 		}
 
 		return Token{
 			Type: IDENT, // normalize NT_IDENT as <> are just a sugar here
 			Text: sb.String(),
-		}
+		}, nil
 	}
 
 	// 3. string literal
@@ -130,7 +161,10 @@ func (l *Lexer) Next() Token {
 		for {
 			ch, _, err := l.r.ReadRune()
 			if err != nil {
-				panic("unterminated string literal")
+				if err == io.EOF {
+					return Token{}, fmt.Errorf("unterminated string literal")
+				}
+				return Token{}, err
 			}
 
 			if ch == quote {
@@ -140,7 +174,10 @@ func (l *Lexer) Next() Token {
 			if ch == '\\' {
 				esc, _, err := l.r.ReadRune()
 				if err != nil {
-					panic("unterminated escape sequence")
+					if err == io.EOF {
+						return Token{}, fmt.Errorf("unterminated escape sequence")
+					}
+					return Token{}, err
 				}
 				switch esc {
 				case '"':
@@ -154,7 +191,7 @@ func (l *Lexer) Next() Token {
 				case 't':
 					sb.WriteRune('\t')
 				default:
-					panic("unknown escape sequence: \\" + string(esc))
+					return Token{}, fmt.Errorf("unknown escape sequence: \\%c", esc)
 				}
 				continue
 			}
@@ -165,7 +202,7 @@ func (l *Lexer) Next() Token {
 		return Token{
 			Type: STRING,
 			Text: sb.String(),
-		}
+		}, nil
 	}
 
 	// 4. ASSIGN ::=
@@ -174,29 +211,29 @@ func (l *Lexer) Next() Token {
 		if err == nil && ch2 == ':' {
 			ch3, _, err := l.r.ReadRune()
 			if err == nil && ch3 == '=' {
-				return Token{Type: ASSIGN, Text: "::="}
+				return Token{Type: ASSIGN, Text: "::="}, nil
 			}
 		}
-		panic("expected ::=")
+		return Token{}, fmt.Errorf("expected ::=")
 	}
 
 	// 5. pojedyncze symbole
 	switch ch {
 	case '|':
-		return Token{Type: PIPE, Text: "|"}
+		return Token{Type: PIPE, Text: "|"}, nil
 	case '*':
-		return Token{Type: STAR, Text: "*"}
+		return Token{Type: STAR, Text: "*"}, nil
 	case '+':
-		return Token{Type: PLUS, Text: "+"}
+		return Token{Type: PLUS, Text: "+"}, nil
 	case '?':
-		return Token{Type: QMARK, Text: "?"}
+		return Token{Type: QMARK, Text: "?"}, nil
 	case '(':
-		return Token{Type: LPAREN, Text: "("}
+		return Token{Type: LPAREN, Text: "("}, nil
 	case ')':
-		return Token{Type: RPAREN, Text: ")"}
+		return Token{Type: RPAREN, Text: ")"}, nil
 	}
 
-	panic("unexpected character: " + string(ch))
+	return Token{}, fmt.Errorf("unexpected character: %q", ch)
 }
 
 func isWhitespace(ch rune) bool {

@@ -4,12 +4,16 @@ type choice struct {
 	Options []node
 }
 
-func (c *choice) match(ctx *context, pos int) []int {
+func (c *choice) match(ctx *context, pos int) ([]int, error) {
 	var results []int
 	for _, opt := range c.Options {
-		results = append(results, ctx.Match(opt, pos)...)
+		matches, err := ctx.Match(opt, pos)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, matches...)
 	}
-	return results
+	return results, nil
 }
 
 func (c *choice) Expect() []string {

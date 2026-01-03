@@ -1,6 +1,7 @@
 package bnf
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -12,51 +13,88 @@ type Parser struct {
 	peek Token
 }
 
-func NewParser(r io.Reader) *Parser {
+func NewParser(r io.Reader) (*Parser, error) {
 	lx := NewLexer(r)
+	look, err := lx.Next()
+	if err != nil {
+		return nil, err
+	}
+	peek, err := lx.Next()
+	if err != nil {
+		return nil, err
+	}
 	return &Parser{
 		lx:   lx,
-		look: lx.Next(),
-		peek: lx.Next(),
-	}
+		look: look,
+		peek: peek,
+	}, nil
 }
 
-func (p *Parser) eat(t TokenType) Token {
+func (p *Parser) eat(t TokenType) (Token, error) {
 	if p.look.Type != t {
-		panic("unexpected token: " + p.look.Text)
+		return Token{}, fmt.Errorf("unexpected token: %s, expected: %d", p.look.Text, t)
 	}
 	tok := p.look
 	p.look = p.peek
-	p.peek = p.lx.Next()
-	return tok
+	var err error
+	p.peek, err = p.lx.Next()
+	if err != nil {
+		return Token{}, err
+	}
+	return tok, nil
 }
 
-func (p *Parser) ParseGrammar() *GrammarAST {
+func (p *Parser) ParseGrammar() (*GrammarAST, error) {
 	var rules []*RuleAST
 	for p.look.Type != EOF {
 		// process rule otherwise
-		rules = append(rules, p.parseRule())
+		r, err := p.parseRule()
+		if err != nil {
+			return nil, err
+		}
+		rules = append(rules, r)
 	}
-	return &GrammarAST{Rules: rules}
+	return &GrammarAST{Rules: rules}, nil
 }
 
-func (p *Parser) parseRule() *RuleAST {
-	name := p.eat(IDENT).Text
-	p.eat(ASSIGN)
-	expr := p.parseExpr()
+func (p *Parser) parseRule() (*RuleAST, error) {
+	tok, err := p.eat(IDENT)
+	if err != nil {
+		return nil, err
+	}
+	name := tok.Text
 
-	return &RuleAST{Name: name, Expr: expr}
+	if _, err := p.eat(ASSIGN); err != nil {
+		return nil, err
+	}
+
+	expr, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+
+	return &RuleAST{Name: name, Expr: expr}, nil
 }
 
-func (p *Parser) parseExpr() ExprAST {
-	left := p.parseSeq()
+func (p *Parser) parseExpr() (ExprAST, error) {
+	left, err := p.parseSeq()
+	if err != nil {
+		return nil, err
+	}
+
 	options := []ExprAST{left}
 
 	for {
 		// multiline alternative
 		if p.look.Type == PIPE {
-			p.eat(PIPE)
-			options = append(options, p.parseSeq())
+			if _, err := p.eat(PIPE); err != nil {
+				return nil, err
+			}
+			r, err := p.parseSeq()
+			if err != nil {
+				return nil, err
+			}
+			options = append(options, r)
 			continue
 		}
 
@@ -69,12 +107,12 @@ func (p *Parser) parseExpr() ExprAST {
 	}
 
 	if len(options) == 1 {
-		return left
+		return left, nil
 	}
-	return &ChoiceAST{Options: options}
+	return &ChoiceAST{Options: options}, nil
 }
 
-func (p *Parser) parseSeq() ExprAST {
+func (p *Parser) parseSeq() (ExprAST, error) {
 	var elems []ExprAST
 
 	for {
@@ -85,13 +123,17 @@ func (p *Parser) parseSeq() ExprAST {
 
 		switch p.look.Type {
 		case IDENT, STRING, LPAREN:
-			elems = append(elems, p.parseFactor())
+			e, err := p.parseFactor()
+			if err != nil {
+				return nil, err
+			}
+			elems = append(elems, e)
 		default:
-			return singleOrSeq(elems)
+			return singleOrSeq(elems), nil
 		}
 	}
 
-	return singleOrSeq(elems)
+	return singleOrSeq(elems), nil
 }
 
 func singleOrSeq(elems []ExprAST) ExprAST {
@@ -101,51 +143,78 @@ func singleOrSeq(elems []ExprAST) ExprAST {
 	return &SeqAST{Elements: elems}
 }
 
-
-func (p *Parser) parseFactor() ExprAST {
-	atom := p.parseAtom()
+func (p *Parser) parseFactor() (ExprAST, error) {
+	atom, err := p.parseAtom()
+	if err != nil {
+		return nil, err
+	}
 
 	switch p.look.Type {
 	case STAR:
 		p.eat(STAR)
-		return &RepeatAST{Node: atom, Min: 0, Max: -1}
+		return &RepeatAST{Node: atom, Min: 0, Max: -1}, nil
 	case PLUS:
 		p.eat(PLUS)
-		return &RepeatAST{Node: atom, Min: 1, Max: -1}
+		return &RepeatAST{Node: atom, Min: 1, Max: -1}, nil
 	case QMARK:
 		p.eat(QMARK)
-		return &RepeatAST{Node: atom, Min: 0, Max: 1}
+		return &RepeatAST{Node: atom, Min: 0, Max: 1}, nil
 		// TODO: consider adding OptionalAST
 		// return &OptionalAST{Node: atom}
 	}
 
-	return atom
+	return atom, nil
 }
 
-func (p *Parser) parseAtom() ExprAST {
+func (p *Parser) parseAtom() (ExprAST, error) {
 	switch p.look.Type {
 	case IDENT:
-		return &IdentAST{Name: p.eat(IDENT).Text}
+		tok, err := p.eat(IDENT)
+		if err != nil {
+			return nil, err
+		}
+		return &IdentAST{Name: tok.Text}, nil
 	case NT_IDENT:
-		return &IdentAST{Name: p.eat(NT_IDENT).Text}
+		tok, err := p.eat(NT_IDENT)
+		if err != nil {
+			return nil, err
+		}
+		return &IdentAST{Name: tok.Text}, nil
 	case STRING:
-		return &StringAST{Value: p.eat(STRING).Text}
+		tok, err := p.eat(STRING)
+		if err != nil {
+			return nil, err
+		}
+		return &StringAST{Value: tok.Text}, nil
 	case LPAREN:
-		p.eat(LPAREN)
-		e := p.parseExpr()
-		p.eat(RPAREN)
-		return e
+		if _, err := p.eat(LPAREN); err != nil {
+			return nil, err
+		}
+		e, err := p.parseExpr()
+		if err != nil {
+			return nil, err
+		}
+		if _, err := p.eat(RPAREN); err != nil {
+			return nil, err
+		}
+		return e, nil
 	}
-	panic("unexpected token")
+	return nil, fmt.Errorf("unexpected token in atom: %v", p.look)
 }
 
 func (p *Parser) isRuleStart() bool {
 	return p.look.Type == IDENT && p.peek.Type == ASSIGN
 }
 
-func LoadGrammar(r io.Reader) *Grammar {
-	p := NewParser(r)
-	ast := p.ParseGrammar()
+func LoadGrammar(r io.Reader) (*Grammar, error) {
+	p, err := NewParser(r)
+	if err != nil {
+		return nil, err
+	}
+	ast, err := p.ParseGrammar()
+	if err != nil {
+		return nil, err
+	}
 	return BuildGrammar(ast)
 }
 
@@ -156,9 +225,9 @@ func LoadGrammarFile(path string) (*Grammar, error) {
 	}
 	defer f.Close()
 
-	return LoadGrammar(f), nil
+	return LoadGrammar(f)
 }
 
-func LoadGrammarString(s string) *Grammar {
+func LoadGrammarString(s string) (*Grammar, error) {
 	return LoadGrammar(strings.NewReader(s))
 }
