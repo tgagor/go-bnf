@@ -1,6 +1,7 @@
 package bnf
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -37,5 +38,9 @@ func TestExpected_FilteredToTerminals(t *testing.T) {
 	pe := err.(*ParseError)
 
 	terms := filterTerminals(pe.Expected)
-	assert.ElementsMatch(t, []string{`","`, `"."`}, terms)
+	expected := []string{`","`, `"."`}
+	for i := 1; i <= 9; i++ {
+		expected = append(expected, fmt.Sprintf(`"%d"`, i))
+	}
+	assert.ElementsMatch(t, expected, terms)
 }

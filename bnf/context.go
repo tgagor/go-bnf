@@ -16,8 +16,9 @@ type memoEntry struct {
 }
 
 type context struct {
-	input string
-	memo  map[memoKey]*memoEntry // cache (node, pos)
+	input        string
+	memo         map[memoKey]*memoEntry // cache (node, pos)
+	activeCounts map[int]int            // recursive rules count per position
 
 	// debug
 	FarthestPos int // farthest position reached during parsing
@@ -31,8 +32,9 @@ type context struct {
 
 func NewContext(input string) *context {
 	return &context{
-		input: input,
-		memo:  make(map[memoKey]*memoEntry),
+		input:        input,
+		memo:         make(map[memoKey]*memoEntry),
+		activeCounts: make(map[int]int),
 	}
 }
 
@@ -55,33 +57,44 @@ func (ctx *context) Match(node node, pos int) []int {
 			// This is the crucial part for handling left recursion.
 			// We've been here before in a recursive call.
 			// We return the "seed" result but mark that the rule needs re-evaluation.
+			// fmt.Printf("MATCH RECURSIVE %T @ %d -> %v\n", node, pos, entry.results)
 			return entry.results
 		}
 		return entry.results
 	}
 
-
-    // 2. Set up for potential left recursion.
-    //    Assume failure (the "seed" result) and mark it as left-recursive.
+	// 2. Set up for potential left recursion.
+	//    Assume failure (the "seed" result) and mark it as left-recursive.
 	entry := &memoEntry{isLeftRecursive: true, results: nil}
 	ctx.memo[key] = entry
+	ctx.activeCounts[pos]++
 
-    // 2. Try to parse with the seed.
+	// 2. Try to parse with the seed.
 	//	  This may recursively call back into this same function.
-    // 2. Try to parse with the seed.
-    var lastResults []int
-    currentResults := node.match(ctx, pos)
+	// 2. Try to parse with the seed.
+	var lastResults []int
+	currentResults := node.match(ctx, pos)
+	// fmt.Printf("MATCH FIRST %T @ %d -> %v\n", node, pos, currentResults)
 
-    // 3. "Grow" the result. Keep parsing as long as the match gets longer.
-    for !slices.Equal(currentResults, lastResults) {
-        lastResults = currentResults
-        // Important: Update the cache with the better result BEFORE re-evaluating.
-        ctx.memo[key] = &memoEntry{isLeftRecursive: true, results: lastResults}
-        currentResults = node.match(ctx, pos)
-    }
+	// 3. "Grow" the result. Keep parsing as long as the match gets longer.
+	for !slices.Equal(currentResults, lastResults) {
+		// fmt.Printf("MATCH GROW %T @ %d: %v != %v\n", node, pos, currentResults, lastResults)
+		lastResults = currentResults
+		// Important: Update the cache with the better result BEFORE re-evaluating.
+		ctx.memo[key] = &memoEntry{isLeftRecursive: true, results: lastResults}
+		currentResults = node.match(ctx, pos)
+	}
 
-    // 4. Finalize the result. Mark that we are done with this rule.
-    ctx.memo[key] = &memoEntry{isLeftRecursive: false, results: currentResults}
+	// 4. Finalize the result. Mark that we are done with this rule.
+	ctx.activeCounts[pos]--
+	if ctx.activeCounts[pos] > 0 {
+		// We are inside another active rule at this position.
+		// Our result might depend on a "Recursive Seed" (nil or partial) of that active rule.
+		// Do not memoize permanently.
+		delete(ctx.memo, key)
+	} else {
+		ctx.memo[key] = &memoEntry{isLeftRecursive: false, results: currentResults}
+	}
 
 	// 5. error tracking
 	// we're looking for the farthest position reached
