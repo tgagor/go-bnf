@@ -174,8 +174,13 @@ func TestRecursiveGrammar(t *testing.T) {
 	assert.True(t, ok)
 	assert.NoError(t, err)
 
-	// assert.True(t, g.Match("a+a"))   // left recursion detected
-	// assert.True(t, g.Match("a+a+a")) // left recursion detected
+	ok, err = g.Match("a+a")
+	assert.True(t, ok)
+	assert.NoError(t, err)
+
+	ok, err = g.Match("a+a+a")
+	assert.True(t, ok)
+	assert.NoError(t, err)
 
 	ok, err = g.Match("")
 	assert.False(t, ok)
