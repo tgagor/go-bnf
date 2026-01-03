@@ -79,5 +79,4 @@ The core design separates **Grammar Parsing** from **Text Matching**:
 
 ## To Do
 
-[ ] - Add comments support
 [ ] - Provide BNF grammar of my parser
