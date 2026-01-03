@@ -19,9 +19,13 @@ type CLI struct {
 	ValidateGrammar bool
 	ParseAsAST      bool
 	StartRule       string
+	Output          io.Writer
 }
 
-func New(buildVersion, appName, grammarFile, verifyFile string, lineByLine, validateGrammar, parseAsAST bool, startRule string) *CLI {
+func New(buildVersion, appName, grammarFile, verifyFile string, lineByLine, validateGrammar, parseAsAST bool, startRule string, output io.Writer) *CLI {
+	if output == nil {
+		output = os.Stdout
+	}
 	return &CLI{
 		BuildVersion:    buildVersion,
 		AppName:         appName,
@@ -31,6 +35,7 @@ func New(buildVersion, appName, grammarFile, verifyFile string, lineByLine, vali
 		ValidateGrammar: validateGrammar,
 		ParseAsAST:      parseAsAST,
 		StartRule:       startRule,
+		Output:          output,
 	}
 }
 
@@ -64,11 +69,10 @@ func loadFile(file string, lineByLine bool) ([]string, error) {
 }
 
 func (cli *CLI) Run() error {
-	fmt.Println("Parsing grammar file:", cli.GrammarFile)
+	fmt.Fprintln(cli.Output, "Parsing grammar file:", cli.GrammarFile)
 	g, err := bnf.LoadGrammarFile(cli.GrammarFile)
 	if err != nil {
-		fmt.Println("Parsing error:", err)
-		os.Exit(1)
+		return fmt.Errorf("parsing error: %w", err)
 	}
 
 	if cli.StartRule != "" {
@@ -77,10 +81,9 @@ func (cli *CLI) Run() error {
 
 	// Always validate grammar structure (undefined rules, etc.)
 	if err := g.ValidateGrammar(); err != nil {
-		fmt.Printf("Grammar validation error: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("grammar validation error: %w", err)
 	}
-	fmt.Println("Grammar loaded and validated.")
+	fmt.Fprintln(cli.Output, "Grammar loaded and validated.")
 
 	if cli.ValidateGrammar {
 		// If only validation was requested, we are done
@@ -97,13 +100,13 @@ func (cli *CLI) Run() error {
 		}
 	}
 
-	fmt.Println("Loading input...")
+	fmt.Fprintln(cli.Output, "Loading input...")
 	var tokens []string
 	if cli.LineByLine {
-		fmt.Println("Checking line by line...")
+		fmt.Fprintln(cli.Output, "Checking line by line...")
 		tokens, err = loadFile(cli.VerifyFile, true)
 	} else {
-		fmt.Println("Checking whole input...")
+		fmt.Fprintln(cli.Output, "Checking whole input...")
 		tokens, err = loadFile(cli.VerifyFile, false)
 	}
 	if err != nil {
@@ -111,20 +114,20 @@ func (cli *CLI) Run() error {
 	}
 
 	for _, l := range tokens {
-		fmt.Printf("Checking: %s", l)
+		fmt.Fprintf(cli.Output, "Checking: %s", l)
 		if cli.ParseAsAST {
 			node, err := g.Parse(l)
 			if err == nil {
-				fmt.Println(" -> matched")
-				fmt.Println("AST Tree:")
-				fmt.Println(node.String())
+				fmt.Fprintln(cli.Output, " -> matched")
+				fmt.Fprintln(cli.Output, "AST Tree:")
+				fmt.Fprintln(cli.Output, node.String())
 			} else {
 				cli.reportError(l, err)
 			}
 		} else {
 			match, err := g.Match(l)
 			if match {
-				fmt.Println(" -> matched")
+				fmt.Fprintln(cli.Output, " -> matched")
 			} else {
 				cli.reportError(l, err)
 			}
@@ -136,14 +139,14 @@ func (cli *CLI) Run() error {
 
 func (cli *CLI) reportError(input string, err error) {
 	if err == nil {
-		fmt.Println(" -> not matched (no error details)")
+		fmt.Fprintln(cli.Output, " -> not matched (no error details)")
 	} else if pe, ok := err.(*bnf.ParseError); ok {
 		if pe == nil {
-			fmt.Println(" -> not matched (nil ParseError)")
+			fmt.Fprintln(cli.Output, " -> not matched (nil ParseError)")
 		} else {
-			fmt.Printf("\n%s\n\n", pe.Pretty(input))
+			fmt.Fprintf(cli.Output, "\n%s\n\n", pe.Pretty(input))
 		}
 	} else {
-		fmt.Printf(" -> error: %v\n", err)
+		fmt.Fprintf(cli.Output, " -> error: %v\n", err)
 	}
 }
