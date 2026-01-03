@@ -38,35 +38,30 @@ func NewContext(input string) *context {
 }
 
 func (ctx *context) Match(node node, pos int) ([]MatchResult, error) {
-	// Simple safety check.
+	// Simple safety check to prevent nil pointer dereferences.
 	if node == nil {
 		return nil, fmt.Errorf("nil node in Context")
 	}
 
-	// Track the deepest position reached for error reporting.
-	if pos > ctx.CurrentPos {
-		ctx.CurrentPos = pos
-	}
-
 	// 1. Check Memoization Cache
-	// If we have a result for this (node, pos) pair, return it immediately.
+	// Memoization is key to Packrat parsing. We cache results for each (node, pos) pair
+	// to ensure linear time complexity (for non-recursive grammars) and to handle recursion.
 	key := memoKey{node: node, pos: pos}
 	if entry, ok := ctx.memo[key]; ok {
 		if entry.isLeftRecursive {
 			// CRITICAL: Left Recursion Handling.
-			// If we hit a cache entry marked 'isLeftRecursive', it means we are inside
-			// a recursive call for this same rule at this same position.
-			// We return the current "seed" result (which starts as failure/nil)
-			// to allow the parser to make progress and potentially find a base case.
+			// When we hit a rule that is already being evaluated at this position,
+			// we return the current "seed" result. This seed starts as a failure (nil)
+			// and grows iteratively in step 4.
 			return entry.results, nil
 		}
 		return entry.results, nil
 	}
 
 	// 2. Initialize for Left Recursion
-	// We haven't visited this node at this pos yet. To handle potential direct or indirect
-	// left recursion, we insert a "seed" entry into the memo table. This seed assumes
-	// failure (nil results) initially. If we recurse back here, step 1 will return this nil.
+	// We haven't visited this node at this pos yet. We insert a "seed" entry
+	// marked as left-recursive with nil results. This prevents infinite loops
+	// by giving recursive calls a starting point (initially failure).
 	entry := &memoEntry{isLeftRecursive: true, results: nil}
 	ctx.memo[key] = entry
 	ctx.activeCounts[pos]++
@@ -82,11 +77,10 @@ func (ctx *context) Match(node node, pos int) ([]MatchResult, error) {
 	}
 
 	// 4. Grow the Seed (Iterative Step)
-	// If this rule is left-recursive, we might have computed a result based on the nil seed.
-	// Now we update the cache with this new result and try to parse AGAIN.
-	// This allows the recursion to "grow" (unroll) one more level.
-	// We repeat this until the results stop changing (stabilize).
-	// We compare 'End' positions to detect stability.
+	// If the rule is left-recursive, we might have found a match based on the nil seed.
+	// We now update the cache with this better result and re-run the parse.
+	// We repeat this process until the match stops growing (stabilizes).
+	// Stability is determined by comparing the end positions of all possible matches.
 	for !resultsEndEqual(currentResults, lastResults) {
 		lastResults = currentResults
 
@@ -102,7 +96,7 @@ func (ctx *context) Match(node node, pos int) ([]MatchResult, error) {
 	}
 
 	// 5. Cleanup and Finalize
-	// We are done with this node at this position.
+	// We've finished evaluating this node at this position.
 	ctx.activeCounts[pos]--
 	if ctx.activeCounts[pos] > 0 {
 		// If other rules are still active at this position, our result might depend on
@@ -115,14 +109,16 @@ func (ctx *context) Match(node node, pos int) ([]MatchResult, error) {
 	}
 
 	// 6. Error Tracking
-	// If we failed to match anything, we record error information.
-	// We track the "farthest failure" (deepest position) to provide helpful error messages.
-	// If we reached the same farthest position again, we merge the expected tokens.
+	// If the match failed (no result), we record error details.
+	// We track the 'FarthestPos' across the entire parse to ensure we report
+	// the deepest point where the grammar failed to proceed.
 	if len(currentResults) == 0 {
-		if ctx.error == nil || ctx.CurrentPos > ctx.FarthestPos {
-			ctx.FarthestPos = ctx.CurrentPos
+		if ctx.error == nil || pos > ctx.FarthestPos {
+			ctx.FarthestPos = pos
+			// makeError pulls Pos, Line, Col from ctx.FarthestPos
 			ctx.error = ctx.makeError(node)
-		} else if ctx.CurrentPos == ctx.FarthestPos {
+		} else if pos == ctx.FarthestPos {
+			// If we reached the same deepest failure, merge the expected tokens.
 			ctx.error.Expected = mergeExpected(ctx.error.Expected, node.Expect())
 		}
 	}

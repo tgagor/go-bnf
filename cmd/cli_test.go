@@ -68,3 +68,14 @@ func TestRun_Postal(t *testing.T) {
 		assert.NoError(t, err)
 	}
 }
+
+func TestRun_Numbers(t *testing.T) {
+	t.Parallel()
+	grammarFile := filepath.Join("..", "examples", "numbers.bnf")
+	inputFile := filepath.Join("..", "examples", "numbers.test")
+
+	cli := New("0.0.1", "test", grammarFile, inputFile, true)
+
+	err := cli.Run()
+	assert.NoError(t, err)
+}
