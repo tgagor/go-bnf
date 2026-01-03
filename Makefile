@@ -1,3 +1,5 @@
+.PHONY: build run bin/bnf test integration-test install install-linters lint docs clean
+
 VERSION ?= $(shell git describe --tags --always)
 GOBIN ?= $(shell go env GOPATH)/bin
 OUTPUT_DIR ?= bin
@@ -54,11 +56,15 @@ $(GOBIN)/golangci-lint:
 $(GOBIN)/gocritic:
 	@go install github.com/go-critic/go-critic/cmd/gocritic@v0.13.0
 
-install-linters: $(GOBIN)/goimports $(GOBIN)/gocyclo $(GOBIN)/golangci-lint $(GOBIN)/gocritic
-	@echo "Linters installed successfully."
-
 lint: install-linters
 	@pre-commit run -a
+
+docs:
+	@mkdir -p docs
+	@echo "Generating documentation..."
+	@go doc -all ./bnf > docs/bnf.txt
+	@go doc -all ./cmd > docs/cli.txt
+	@echo "Documentation generated in docs/ directory."
 
 clean:
 	@rm -rfv $(OUTPUT_DIR)

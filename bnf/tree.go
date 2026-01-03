@@ -7,11 +7,12 @@ import (
 
 // ASTNode represents a node in the parsed output tree (the Parse Tree).
 type ASTNode struct {
-	Type     string     // Rule name or "TERMINAL"
+	Type     string     // Rule name, "TERMINAL", or "REGEX"
 	Value    string     // The actual text matched
 	Children []*ASTNode // Child nodes
 }
 
+// String returns a multi-line, indented string representation of the parse tree.
 func (n *ASTNode) String() string {
 	var sb strings.Builder
 	n.format(&sb, 0)

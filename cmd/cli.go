@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// CLI handles the command-line interface execution flow, including grammar loading and input verification.
 type CLI struct {
 	BuildVersion string
 	AppName      string
@@ -22,6 +23,7 @@ type CLI struct {
 	Output          io.Writer
 }
 
+// New creates a new CLI instance with the specified configuration.
 func New(buildVersion, appName, grammarFile, verifyFile string, lineByLine, validateGrammar, parseAsAST bool, startRule string, output io.Writer) *CLI {
 	if output == nil {
 		output = os.Stdout
@@ -68,6 +70,7 @@ func loadFile(file string, lineByLine bool) ([]string, error) {
 	}
 }
 
+// Run executes the CLI logic: loads the grammar, validates it, and matches/parses the provided input.
 func (cli *CLI) Run() error {
 	fmt.Fprintln(cli.Output, "Parsing grammar file:", cli.GrammarFile)
 	g, err := bnf.LoadGrammarFile(cli.GrammarFile)

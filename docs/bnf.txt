@@ -1,0 +1,197 @@
+package bnf // import "go-bnf/bnf"
+
+
+FUNCTIONS
+
+func NewContext(input string) *context
+
+TYPES
+
+type ASTNode struct {
+	Type     string     // Rule name, "TERMINAL", or "REGEX"
+	Value    string     // The actual text matched
+	Children []*ASTNode // Child nodes
+}
+    ASTNode represents a node in the parsed output tree (the Parse Tree).
+
+func (n *ASTNode) String() string
+    String returns a multi-line, indented string representation of the parse
+    tree.
+
+type ChoiceAST struct {
+	Options []ExprAST
+}
+    ChoiceAST represents a choice between multiple alternatives (e.g., "a" |
+    "b").
+
+type ExprAST any
+    ExprAST is a marker interface for all AST expression nodes.
+
+type Grammar struct {
+	Rules map[string]*Rule
+	Start string
+}
+    Grammar represents a complete set of BNF rules and an optional start rule.
+
+func BuildGrammar(ast *GrammarAST) (*Grammar, error)
+    BuildGrammar converts a raw GrammarAST into a functional Grammar object with
+    linked rules.
+
+func LoadGrammar(r io.Reader) (*Grammar, error)
+    LoadGrammar reads a BNF grammar from an io.Reader and builds a Grammar
+    object.
+
+func LoadGrammarFile(path string) (*Grammar, error)
+    LoadGrammarFile reads a BNF grammar from a file and builds a Grammar object.
+
+func LoadGrammarString(s string) (*Grammar, error)
+    LoadGrammarString reads a BNF grammar from a string and builds a Grammar
+    object.
+
+func (g *Grammar) Match(input string) (bool, error)
+    Match checks if the entire input matches the grammar starting from the
+    defined start rule.
+
+func (g *Grammar) MatchFrom(start string, input string) (bool, error)
+    MatchFrom checks if the entire input matches the grammar starting from the
+    specified rule.
+
+func (g *Grammar) MatchPrefix(input string) bool
+    MatchPrefix checks if any prefix of the input matches the grammar start
+    rule.
+
+func (g *Grammar) Parse(input string) (*ASTNode, error)
+    Parse parses the input and returns the AST.
+
+func (g *Grammar) Resolve() error
+    Resolve recursively links all non-terminal nodes in the grammar to their
+    rule definitions.
+
+func (g *Grammar) SetStart(name string)
+    SetStart sets the entry rule for matching and parsing.
+
+func (g *Grammar) Validate(input string) (bool, error)
+    Validate checks if the input matches the grammar start rule. It is an alias
+    for Match (or Match behaves as Validate).
+
+func (g *Grammar) ValidateGrammar() error
+    ValidateGrammar checks if the grammar is self-consistent (all referenced
+    rules exist and a start rule is defined).
+
+type GrammarAST struct {
+	Rules []*RuleAST
+}
+    GrammarAST represents the raw AST of a BNF grammar before it is built into a
+    Grammar object.
+
+type IdentAST struct {
+	Name string
+}
+    IdentAST represents a reference to another rule.
+
+type Lexer struct {
+	// Has unexported fields.
+}
+    Lexer breaks the BNF grammar input into a stream of tokens.
+
+func NewLexer(r io.Reader) *Lexer
+    NewLexer creates a new Lexer for the given reader.
+
+func (l *Lexer) Next() (Token, error)
+    Next returns the next token from the input stream.
+
+type MatchResult struct {
+	End   int
+	Nodes []*ASTNode
+}
+
+type ParseError struct {
+	Pos    int
+	Line   int
+	Column int
+
+	RuleStack []string
+
+	Expected []string
+	Found    string
+
+	Width int // number of characters to highlight
+}
+    ParseError records the details of a failed parse attempt, including the
+    position and expectations.
+
+func (err *ParseError) Error() string
+    Error returns a basic string description of the parse error.
+
+func (e *ParseError) Pretty(input string) string
+    Pretty returns a formatted, multi-line error message with a visual pointer
+    to the failure location.
+
+type Parser struct {
+	// Has unexported fields.
+}
+    Parser converts a stream of BNF tokens into a GrammarAST.
+
+func NewParser(r io.Reader) (*Parser, error)
+    NewParser creates a new Parser for the given reader.
+
+func (p *Parser) ParseGrammar() (*GrammarAST, error)
+    ParseGrammar parses the input into a complete GrammarAST.
+
+type Regex struct {
+	Re *regexp.Regexp
+}
+
+func (r *Regex) Expect() []string
+
+type RepeatAST struct {
+	Node ExprAST
+	Min  int
+	Max  int // -1 = infinity
+}
+    RepeatAST represents a repetition of an expression (e.g., "a"*, "a"+, "a"?).
+
+type Rule struct {
+	Name string
+	Expr node
+}
+    Rule represents a single BNF rule with its name and expression.
+
+type RuleAST struct {
+	Name string
+	Expr ExprAST
+}
+    RuleAST represents a single rule in the GrammarAST.
+
+type SeqAST struct {
+	Elements []ExprAST
+}
+    SeqAST represents a sequence of expressions (e.g., "a" "b").
+
+type StringAST struct {
+	Value string
+}
+    StringAST represents a literal string terminal.
+
+type Token struct {
+	Type TokenType
+	Text string
+}
+    Token represents a single atom (lexeme) in the input BNF grammar.
+
+type TokenType int
+    TokenType represents the category of a lexed token.
+
+const (
+	EOF      TokenType = iota
+	IDENT              // generic identifier or BNF rule name
+	NT_IDENT           // BNF rule name explicitly in angle brackets (<rule>)
+	STRING             // quoted string literal
+	ASSIGN             // the ::= operator
+	PIPE               // the | operator
+	STAR               // the * operator
+	PLUS               // the + operator
+	QMARK              // the ? operator
+	LPAREN             // the ( operator
+	RPAREN             // the ) operator
+)
