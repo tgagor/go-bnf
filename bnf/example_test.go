@@ -2,7 +2,7 @@ package bnf_test
 
 import (
 	"fmt"
-	"go-bnf/bnf"
+	"github.com/tgagor/go-bnf/bnf"
 	"log"
 )
 

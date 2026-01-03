@@ -1,4 +1,4 @@
-module go-bnf
+module github.com/tgagor/go-bnf
 
 go 1.25.0
 

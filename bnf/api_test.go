@@ -2,7 +2,7 @@ package bnf_test
 
 import (
 	"bytes"
-	"go-bnf/bnf"
+	"github.com/tgagor/go-bnf/bnf"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
