@@ -14,7 +14,8 @@ func TestBNF_MultilineOr(t *testing.T) {
           | "2"
 `
 
-	g := LoadGrammarString(grammar)
+	g, err := LoadGrammarString(grammar)
+	assert.NoError(t, err)
 	assert.NotNil(t, g)
 
 	ok, err := g.MatchFrom("DIGIT", "0")

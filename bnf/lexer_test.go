@@ -15,7 +15,11 @@ Term ::= "a"
 	lx := NewLexer(strings.NewReader(input))
 
 	for {
-		tok := lx.Next()
+		tok, err := lx.Next()
+		if err != nil {
+			t.Logf("Lexer error: %v", err)
+			break
+		}
 		t.Log(tok)
 		if tok.Type == EOF {
 			break
@@ -31,7 +35,8 @@ Expr ::= Term ("+" Term)*
 Term ::= "a"
 `
 
-	g := LoadGrammarString(grammarText)
+	g, err := LoadGrammarString(grammarText)
+	assert.NoError(t, err)
 
 	tests := []struct {
 		input string
@@ -67,7 +72,8 @@ func TestBNF_Choice(t *testing.T) {
 S ::= "a" | "b"
 `
 
-	g := LoadGrammarString(grammarText)
+	g, err := LoadGrammarString(grammarText)
+	assert.NoError(t, err)
 
 	ok, err := g.Match("a")
 	assert.True(t, ok)
@@ -96,7 +102,8 @@ func TestBNF_Numbers(t *testing.T) {
 <number> ::= <digit> | <non_null_digit> <number>
 `
 
-	g := LoadGrammarString(grammarText)
+	g, err := LoadGrammarString(grammarText)
+	assert.NoError(t, err)
 
 	ok, err := g.MatchFrom("number", "0") // single zero is fine
 	assert.True(t, ok)
@@ -129,19 +136,23 @@ func TestLexer_StringQuotes(t *testing.T) {
 
 	l := NewLexer(strings.NewReader(`"a" 'b' "c'd" 'e"f'`))
 
-	a := l.Next()
+	a, err := l.Next()
+	assert.NoError(t, err)
 	assert.Equal(t, STRING, a.Type)
 	assert.Equal(t, "a", a.Text)
 
-	b := l.Next()
+	b, err := l.Next()
+	assert.NoError(t, err)
 	assert.Equal(t, STRING, b.Type)
 	assert.Equal(t, "b", b.Text)
 
-	c := l.Next()
+	c, err := l.Next()
+	assert.NoError(t, err)
 	assert.Equal(t, STRING, c.Type)
 	assert.Equal(t, "c'd", c.Text)
 
-	d := l.Next()
+	d, err := l.Next()
+	assert.NoError(t, err)
 	assert.Equal(t, STRING, d.Type)
 	assert.Equal(t, `e"f`, d.Text)
 }
@@ -151,19 +162,23 @@ func TestLexer_EmptyString(t *testing.T) {
 
 	l := NewLexer(strings.NewReader(`"" '' "a" 'b'`))
 
-	tok := l.Next()
+	tok, err := l.Next()
+	assert.NoError(t, err)
 	assert.Equal(t, STRING, tok.Type)
 	assert.Equal(t, "", tok.Text)
 
-	tok = l.Next()
+	tok, err = l.Next()
+	assert.NoError(t, err)
 	assert.Equal(t, STRING, tok.Type)
 	assert.Equal(t, "", tok.Text)
 
-	tok = l.Next()
+	tok, err = l.Next()
+	assert.NoError(t, err)
 	assert.Equal(t, STRING, tok.Type)
 	assert.Equal(t, "a", tok.Text)
 
-	tok = l.Next()
+	tok, err = l.Next()
+	assert.NoError(t, err)
 	assert.Equal(t, STRING, tok.Type)
 	assert.Equal(t, "b", tok.Text)
 }
@@ -171,7 +186,8 @@ func TestLexer_EmptyString(t *testing.T) {
 func TestPostalAddress(t *testing.T) {
 	t.Parallel()
 
-	g, _ := LoadGrammarFile("../examples/postal.bnf")
+	g, err := LoadGrammarFile("../examples/postal.bnf")
+	assert.NoError(t, err)
 
 	ok := []string{
 		"John Smith\n123 Main St\nSpringfield, MA 02139\n",
@@ -201,8 +217,9 @@ func TestPostalAddress(t *testing.T) {
 func TestCommentAtEOF(t *testing.T) {
 	t.Parallel()
 
-	g := LoadGrammarString(`
+	g, err := LoadGrammarString(`
 a ::= "a" // eof comment`)
+	assert.NoError(t, err)
 
 	m, err := g.Match("a")
 	assert.True(t, m)
@@ -212,11 +229,12 @@ a ::= "a" // eof comment`)
 func TestCommentOnlyLine(t *testing.T) {
 	t.Parallel()
 
-	g := LoadGrammarString(`
+	g, err := LoadGrammarString(`
 # this is a comment
 ; another one
 a ::= "a"
 `)
+	assert.NoError(t, err)
 
 	m, err := g.Match("a")
 	assert.True(t, m)
@@ -226,9 +244,10 @@ a ::= "a"
 func TestCommentAfterAlternative(t *testing.T) {
 	t.Parallel()
 
-	g := LoadGrammarString(`
+	g, err := LoadGrammarString(`
 a ::= "a" | "b" // alternative c
 `)
+	assert.NoError(t, err)
 
 	m, err := g.Match("a")
 	assert.True(t, m)
@@ -246,9 +265,10 @@ a ::= "a" | "b" // alternative c
 func TestCommentInsideString(t *testing.T) {
 	t.Parallel()
 
-	g := LoadGrammarString(`
+	g, err := LoadGrammarString(`
 a ::= "//" | "#" | ";"
 `)
+	assert.NoError(t, err)
 
 	for _, c := range []string{"//", "#", ";"} {
 		m, err := g.Match(c)
@@ -261,11 +281,12 @@ a ::= "//" | "#" | ";"
 func TestCommentWithWhitespace(t *testing.T) {
 	t.Parallel()
 
-	g := LoadGrammarString(`
+	g, err := LoadGrammarString(`
    a ::=   "a"     # comment
            | "b"   // another
            | "c"
 `)
+	assert.NoError(t, err)
 
 	for _, c := range []string{"a", "b", "c"} {
 		m, err := g.Match(c)
@@ -278,9 +299,10 @@ func TestCommentWithWhitespace(t *testing.T) {
 func TestRecurrentParenthesis(t *testing.T) {
 	t.Parallel()
 
-	g := LoadGrammarString(`
+	g, err := LoadGrammarString(`
 		a ::= (((("1" | "2") | "3") | "4") | "c")
 	`)
+	assert.NoError(t, err)
 
 	tests := []struct {
 		input string

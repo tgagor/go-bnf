@@ -41,11 +41,14 @@ func TestOptionalPlus_Terminal(t *testing.T) {
 	}
 
 	ctx := NewContext("a")
-	assert.True(t, slices.Contains(ctx.Match(node, 0), 1))
+	res, _ := ctx.Match(node, 0)
+	assert.True(t, slices.Contains(res, 1))
 
 	ctx = NewContext("aa")
-	assert.True(t, slices.Contains(ctx.Match(node, 0), 2))
+	res, _ = ctx.Match(node, 0)
+	assert.True(t, slices.Contains(res, 2))
 
 	ctx = NewContext("")
-	assert.False(t, slices.Contains(ctx.Match(node, 0), 0))
+	res, _ = ctx.Match(node, 0)
+	assert.False(t, slices.Contains(res, 0))
 }
