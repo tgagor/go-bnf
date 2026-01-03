@@ -15,6 +15,7 @@ const (
 	IDENT              // generic identifier or BNF rule name
 	NT_IDENT           // BNF rule name explicitly in angle brackets (<rule>)
 	STRING             // quoted string literal
+	REGEX              // regex pattern enclosed in /.../
 	ASSIGN             // the ::= operator
 	PIPE               // the | operator
 	STAR               // the * operator
@@ -42,9 +43,11 @@ func NewLexer(r io.Reader) *Lexer {
 
 // Next returns the next token from the input stream.
 func (l *Lexer) Next() (Token, error) {
-	// 1. skip whitespace
+	// 1. skip whitespace and comments
+	var ch rune
+	var err error
 	for {
-		ch, _, err := l.r.ReadRune()
+		ch, _, err = l.r.ReadRune()
 		if err == io.EOF {
 			return Token{Type: EOF}, nil
 		}
@@ -68,15 +71,10 @@ func (l *Lexer) Next() (Token, error) {
 		}
 
 		if ch == '/' {
-			next, _, err := l.r.ReadRune()
-			if err != nil {
-				if err == io.EOF {
-					// just slash at the end? might be unexpected char
-					return Token{}, fmt.Errorf("unexpected EOF after '/'")
-				}
-				return Token{}, err
-			}
-			if next == '/' {
+			// Peek at the next byte to see if it's another '/'
+			peek, err := l.r.Peek(1)
+			if err == nil && len(peek) > 0 && peek[0] == '/' {
+				l.r.ReadRune() // consume the second '/'
 				if err := l.skipUntilEOL(); err != nil {
 					if err == io.EOF {
 						return Token{Type: EOF}, nil
@@ -85,20 +83,13 @@ func (l *Lexer) Next() (Token, error) {
 				}
 				continue
 			}
-			l.r.UnreadRune()
+			// Not a comment, so the / is the start of a token (likely a regex)
+			// We have '/' in 'ch', and we break the loop to process it.
+			break
 		}
 
-		// ch is meaningful
-		l.r.UnreadRune()
+		// ch is meaningful, so we break the loop to process it in the main switch
 		break
-	}
-
-	ch, _, err := l.r.ReadRune()
-	if err == io.EOF {
-		return Token{Type: EOF}, nil
-	}
-	if err != nil {
-		return Token{}, err
 	}
 
 	// 2. identificator
@@ -158,7 +149,48 @@ func (l *Lexer) Next() (Token, error) {
 		}, nil
 	}
 
-	// 3. string literal
+	// 3. regex literal /pattern/
+	if ch == '/' {
+		var sb strings.Builder
+
+		for {
+			ch, _, err := l.r.ReadRune()
+			if err != nil {
+				if err == io.EOF {
+					return Token{}, fmt.Errorf("unterminated regex literal")
+				}
+				return Token{}, err
+			}
+
+			if ch == '/' {
+				break
+			}
+
+			// Handle escape sequences in regex
+			if ch == '\\' {
+				esc, _, err := l.r.ReadRune()
+				if err != nil {
+					if err == io.EOF {
+						return Token{}, fmt.Errorf("unterminated escape sequence in regex")
+					}
+					return Token{}, err
+				}
+				// Preserve the backslash for regex engine
+				sb.WriteRune('\\')
+				sb.WriteRune(esc)
+				continue
+			}
+
+			sb.WriteRune(ch)
+		}
+
+		return Token{
+			Type: REGEX,
+			Text: sb.String(),
+		}, nil
+	}
+
+	// 4. string literal
 	if ch == '"' || ch == '\'' {
 		quote := ch
 		var sb strings.Builder
@@ -210,7 +242,7 @@ func (l *Lexer) Next() (Token, error) {
 		}, nil
 	}
 
-	// 4. ASSIGN ::=
+	// 5. ASSIGN ::=
 	if ch == ':' {
 		ch2, _, err := l.r.ReadRune()
 		if err == nil && ch2 == ':' {
@@ -222,7 +254,7 @@ func (l *Lexer) Next() (Token, error) {
 		return Token{}, fmt.Errorf("expected ::=")
 	}
 
-	// 5. Single symbols
+	// 6. Single symbols
 	switch ch {
 	case '|':
 		return Token{Type: PIPE, Text: "|"}, nil

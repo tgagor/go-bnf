@@ -1,6 +1,9 @@
 package bnf
 
-import "fmt"
+import (
+	"fmt"
+	"regexp"
+)
 
 // GrammarAST represents the raw AST of a BNF grammar before it is built into a Grammar object.
 type GrammarAST struct {
@@ -43,6 +46,11 @@ type (
 	StringAST struct {
 		Value string
 	}
+
+	// RegexAST represents a regular expression pattern terminal.
+	RegexAST struct {
+		Pattern string
+	}
 )
 
 // BuildGrammar converts a raw GrammarAST into a functional Grammar object with linked rules.
@@ -77,6 +85,13 @@ func buildNode(e ExprAST, rules map[string]*Rule) (node, error) {
 	switch t := e.(type) {
 	case *StringAST:
 		return &terminal{Value: t.Value}, nil
+
+	case *RegexAST:
+		re, err := regexp.Compile(t.Pattern)
+		if err != nil {
+			return nil, fmt.Errorf("invalid regex pattern %q: %w", t.Pattern, err)
+		}
+		return &Regex{Re: re}, nil
 
 	case *IdentAST:
 		return &nonTerminal{Name: t.Name, Rule: rules[t.Name]}, nil

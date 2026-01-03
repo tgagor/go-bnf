@@ -125,7 +125,7 @@ func (p *Parser) parseSeq() (ExprAST, error) {
 		}
 
 		switch p.look.Type {
-		case IDENT, STRING, LPAREN:
+		case IDENT, STRING, REGEX, LPAREN:
 			e, err := p.parseFactor()
 			if err != nil {
 				return nil, err
@@ -189,6 +189,12 @@ func (p *Parser) parseAtom() (ExprAST, error) {
 			return nil, err
 		}
 		return &StringAST{Value: tok.Text}, nil
+	case REGEX:
+		tok, err := p.eat(REGEX)
+		if err != nil {
+			return nil, err
+		}
+		return &RegexAST{Pattern: tok.Text}, nil
 	case LPAREN:
 		if _, err := p.eat(LPAREN); err != nil {
 			return nil, err
