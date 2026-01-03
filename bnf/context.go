@@ -27,13 +27,20 @@ type context struct {
 
 	// call stack
 	stack []string
+
+	// limits
+	maxGrowthIterations int // maximum iterations for left-recursion growth
+	matchCounter        int // total match attempts (for detecting pathological grammars)
+	maxMatchAttempts    int // maximum total match attempts before giving up
 }
 
 func NewContext(input string) *context {
 	return &context{
-		input:        input,
-		memo:         make(map[memoKey]*memoEntry),
-		activeCounts: make(map[int]int),
+		input:               input,
+		memo:                make(map[memoKey]*memoEntry),
+		activeCounts:        make(map[int]int),
+		maxGrowthIterations: 1000,   // Prevent exponential backtracking in pathological grammars
+		maxMatchAttempts:    100000, // Global limit across all rules
 	}
 }
 
@@ -41,6 +48,17 @@ func (ctx *context) Match(node node, pos int) ([]MatchResult, error) {
 	// Simple safety check to prevent nil pointer dereferences.
 	if node == nil {
 		return nil, fmt.Errorf("nil node in Context")
+	}
+
+	// Global complexity check
+	ctx.matchCounter++
+	if ctx.matchCounter > ctx.maxMatchAttempts {
+		return nil, fmt.Errorf(
+			"grammar complexity limit exceeded: performed %d match attempts. "+
+				"This grammar is too complex or ambiguous for this parser. "+
+				"Consider simplifying the grammar, reducing left recursion, or using a different parsing approach",
+			ctx.matchCounter,
+		)
 	}
 
 	// 1. Check Memoization Cache
@@ -81,7 +99,20 @@ func (ctx *context) Match(node node, pos int) ([]MatchResult, error) {
 	// We now update the cache with this better result and re-run the parse.
 	// We repeat this process until the match stops growing (stabilizes).
 	// Stability is determined by comparing the end positions of all possible matches.
+	iterations := 0
 	for !resultsEndEqual(currentResults, lastResults) {
+		iterations++
+		if iterations > ctx.maxGrowthIterations {
+			ctx.activeCounts[pos]--
+			delete(ctx.memo, key)
+			return nil, fmt.Errorf(
+				"grammar complexity limit exceeded: left-recursive rule grew for %d iterations at position %d. "+
+					"This usually indicates the grammar has excessive ambiguity or deeply nested left recursion. "+
+					"Consider rewriting the grammar to reduce recursion depth or use right recursion instead",
+				iterations, pos,
+			)
+		}
+
 		lastResults = currentResults
 
 		// Update cache with the latest better result before re-evaluating.
