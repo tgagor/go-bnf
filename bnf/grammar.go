@@ -2,6 +2,9 @@ package bnf
 
 import (
 	"fmt"
+	"os"
+	"io"
+	"strings"
 )
 
 // Rule represents a single BNF rule with its name and expression.
@@ -14,6 +17,35 @@ type Rule struct {
 type Grammar struct {
 	Rules map[string]*Rule
 	Start string
+}
+
+// LoadGrammar reads a BNF grammar from an io.Reader and builds a Grammar object.
+func LoadGrammar(r io.Reader) (*Grammar, error) {
+	p, err := NewParser(r)
+	if err != nil {
+		return nil, err
+	}
+	ast, err := p.ParseGrammar()
+	if err != nil {
+		return nil, err
+	}
+	return BuildGrammar(ast)
+}
+
+// LoadGrammarFile reads a BNF grammar from a file and builds a Grammar object.
+func LoadGrammarFile(path string) (*Grammar, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	return LoadGrammar(f)
+}
+
+// LoadGrammarString reads a BNF grammar from a string and builds a Grammar object.
+func LoadGrammarString(s string) (*Grammar, error) {
+	return LoadGrammar(strings.NewReader(s))
 }
 
 // Resolve recursively links all non-terminal nodes in the grammar to their rule definitions.

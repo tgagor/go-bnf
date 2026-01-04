@@ -3,8 +3,6 @@ package bnf
 import (
 	"fmt"
 	"io"
-	"os"
-	"strings"
 )
 
 // Parser converts a stream of BNF tokens into a GrammarAST.
@@ -213,33 +211,4 @@ func (p *Parser) parseAtom() (ExprAST, error) {
 
 func (p *Parser) isRuleStart() bool {
 	return p.look.Type == IDENT && p.peek.Type == ASSIGN
-}
-
-// LoadGrammar reads a BNF grammar from an io.Reader and builds a Grammar object.
-func LoadGrammar(r io.Reader) (*Grammar, error) {
-	p, err := NewParser(r)
-	if err != nil {
-		return nil, err
-	}
-	ast, err := p.ParseGrammar()
-	if err != nil {
-		return nil, err
-	}
-	return BuildGrammar(ast)
-}
-
-// LoadGrammarFile reads a BNF grammar from a file and builds a Grammar object.
-func LoadGrammarFile(path string) (*Grammar, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	return LoadGrammar(f)
-}
-
-// LoadGrammarString reads a BNF grammar from a string and builds a Grammar object.
-func LoadGrammarString(s string) (*Grammar, error) {
-	return LoadGrammar(strings.NewReader(s))
 }
