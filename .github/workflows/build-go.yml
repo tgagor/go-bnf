@@ -43,7 +43,7 @@ jobs:
     - name: Setup GoLang
       uses: actions/setup-go@v6
       with:
-        go-version: '1.25'
+        go-version: '1.26'
 
     - name: Guess next version
       id: guessed_tag_version
@@ -95,7 +95,7 @@ jobs:
   #     - name: Setup GoLang
   #       uses: actions/setup-go@v6
   #       with:
-  #         go-version: '1.25'
+  #         go-version: '1.26'
 
   #     - id: vars
   #       run: |
@@ -139,7 +139,7 @@ jobs:
       - name: Setup GoLang
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25'
+          go-version: '1.26'
 
       - name: Run Unit Tests
         run: |
